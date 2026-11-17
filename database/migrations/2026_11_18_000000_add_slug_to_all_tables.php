@@ -78,11 +78,21 @@ return new class extends Migration
     }
 
     /**
+     * Tables of the current database only. On MySQL/MariaDB the schema must be
+     * passed explicitly, otherwise the listing spans every database on the
+     * server (the default clause is "not in (system schemas)"). Other drivers
+     * already scope to the current database when no schema is given.
+     *
      * @return list<string>
      */
     private function tables(): array
     {
-        return collect(Schema::getTableListing(null, false))
+        $connection = DB::connection();
+        $schema = in_array($connection->getDriverName(), ['mysql', 'mariadb'], true)
+            ? $connection->getDatabaseName()
+            : null;
+
+        return collect(Schema::getTableListing($schema, false))
             ->reject(fn (string $table): bool => in_array($table, $this->skip, true))
             ->reject(fn (string $table): bool => Str::startsWith($table, $this->skipPrefixes))
             ->values()
