@@ -68,6 +68,22 @@
                                 @endforeach
                             </div>
 
+                        @elseif ($field['type'] === 'icon')
+                            @php($iconMap = $iconMap ?? \App\Support\Panel\IconLibrary::map())
+                            <div class="flex items-center gap-3" data-icon-picker>
+                                <span data-icon-preview
+                                      class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-700 dark:bg-white/5 dark:text-gray-200">
+                                    {!! \App\Support\Panel\IconLibrary::render($field['value'] ?: 'bars-3', 'h-6 w-6') !!}
+                                </span>
+                                <select id="field-{{ $field['name'] }}" name="{{ $field['name'] }}" data-icon-select class="ta-select">
+                                    <option value="">— Pilih —</option>
+                                    @foreach ($field['options'] as $value => $label)
+                                        <option value="{{ $value }}" @selected((string) $field['value'] === (string) $value)>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <script type="application/json" data-icon-map>@json($iconMap)</script>
+
                         @else
                             <input type="{{ $field['type'] === 'password' ? 'password' : $field['type'] }}"
                                    id="field-{{ $field['name'] }}"

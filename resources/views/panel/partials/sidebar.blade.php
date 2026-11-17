@@ -1,9 +1,13 @@
 @php
+    use App\Support\Acl;
     use App\Support\Panel\ResourceRegistry;
 
     $currentResource = request()->routeIs('panel.index') || request()->routeIs('panel.create') || request()->routeIs('panel.edit')
         ? request()->route('resource')
         : null;
+
+    $user = auth()->user();
+    $canGenerate = $user?->hasRole(Acl::SUPER_ADMIN_ROLE) || ($user?->checkPermissionTo('generate_crud') ?? false);
 
     $linkBase = 'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors';
     $linkIdle = 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white';
@@ -54,6 +58,21 @@
                 </div>
             @endif
         @endforeach
+
+        @if ($canGenerate)
+            <div class="space-y-1">
+                <p class="px-3 pb-1 text-[11px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500">
+                    Sistem
+                </p>
+
+                <a href="{{ route('filament.admin.pages.crud-generator') }}" target="_blank" rel="noopener"
+                   class="{{ $linkBase }} {{ $linkIdle }}">
+                    <x-panel-icon name="sparkles" class="h-5 w-5" />
+                    CRUD Generator
+                    <x-panel-icon name="arrow-right-on-rectangle" class="ml-auto h-4 w-4 text-gray-300 transition group-hover:text-brand-500" />
+                </a>
+            </div>
+        @endif
     </nav>
 
     <div class="border-t border-gray-100 p-4 dark:border-gray-800">

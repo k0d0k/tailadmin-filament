@@ -278,7 +278,7 @@ class ResourceRegistry
             'fields' => [
                 self::text('label', 'Label', ['required', 'string', 'max:255'], 'half'),
                 self::select('parent_id', 'Menu Induk', fn ($resource) => self::menuParentOptions($resource), ['nullable', 'exists:menus,id'], 'half'),
-                self::select('icon', 'Ikon', fn () => array_combine(IconLibrary::keys(), IconLibrary::keys()), ['nullable', 'string'], 'half'),
+                self::icon('icon', 'Ikon', ['nullable', 'string'], 'half'),
                 self::number('sort', 'Urutan', ['nullable', 'integer', 'min:0'], 'half'),
                 self::text('url', 'URL Manual', ['nullable', 'string', 'max:255'], 'half'),
                 self::text('resource', 'Filament Resource', ['nullable', 'string', 'max:255'], 'half', [], 'Kelas resource Filament (opsional).'),
@@ -372,6 +372,20 @@ class ResourceRegistry
     protected static function multiselect(string $name, string $label, callable $options, string $col = 'full', ?string $relation = null, ?string $help = null): array
     {
         return compact('name', 'label', 'options', 'col', 'relation', 'help') + ['type' => 'multiselect', 'rules' => ['array']];
+    }
+
+    /**
+     * Icon picker with a live preview of the selected icon.
+     *
+     * @param  array<int, string>  $rules
+     * @return array<string, mixed>
+     */
+    protected static function icon(string $name, string $label, array $rules = [], string $col = 'half', ?string $help = null): array
+    {
+        return compact('name', 'label', 'rules', 'col', 'help') + [
+            'type' => 'icon',
+            'options' => fn (): array => array_combine(IconLibrary::keys(), IconLibrary::keys()),
+        ];
     }
 
     /**

@@ -208,11 +208,41 @@ function initRowActions() {
     });
 }
 
+/* --------------------------------------------------------------------------
+ * Icon picker preview
+ * ------------------------------------------------------------------------ */
+function initIconPickers() {
+    document.querySelectorAll('[data-icon-picker]').forEach((picker) => {
+        const select = picker.querySelector('[data-icon-select]');
+        const preview = picker.querySelector('[data-icon-preview]');
+        if (!select || !preview) {
+            return;
+        }
+
+        let icons = {};
+        try {
+            icons = JSON.parse(picker.querySelector('[data-icon-map]')?.textContent ?? '{}');
+        } catch (error) {
+            icons = {};
+        }
+
+        const render = () => {
+            const svg = icons[select.value];
+            preview.innerHTML = svg ?? icons['bars-3'] ?? '';
+            preview.classList.toggle('opacity-40', !svg);
+        };
+
+        select.addEventListener('change', render);
+        render();
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     initShell();
     initDataTables();
     initRowActions();
+    initIconPickers();
 });
 
 window.tailadminToast = toast;

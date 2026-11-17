@@ -8,6 +8,7 @@ use Filament\Facades\Filament;
 use Filament\Navigation\NavigationItem;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -90,10 +91,25 @@ class MenuRegistry
             ->visible(fn (): bool => self::isVisible($menu));
 
         if (filled($menu->icon)) {
-            $item->icon($menu->icon);
+            $item->icon(self::filamentIcon($menu->icon));
         }
 
         return $item;
+    }
+
+    /**
+     * Filament resolves icons through blade-icons and therefore needs the set
+     * prefix (`heroicon-o-users`), while the TailAdmin menu form stores the
+     * plain name (`users`). Prefixing here keeps both panels working off the
+     * same row, including rows that already carry the prefix.
+     */
+    protected static function filamentIcon(string $icon): string
+    {
+        if (Str::startsWith($icon, ['heroicon-', 'fas-', 'far-', 'fab-'])) {
+            return $icon;
+        }
+
+        return 'heroicon-o-'.$icon;
     }
 
     protected static function isVisible(Menu $menu): bool

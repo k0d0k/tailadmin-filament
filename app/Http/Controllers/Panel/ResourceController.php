@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
+use App\Support\Panel\IconLibrary;
 use App\Support\Panel\ResourceRegistry;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -286,6 +287,10 @@ class ResourceController extends Controller
 
             if ($field['type'] === 'multiselect') {
                 $value = collect($value ?? [])->map(fn ($item) => is_object($item) ? $item->getAttribute('name') : $item)->all();
+            }
+
+            if ($field['type'] === 'icon') {
+                $value = IconLibrary::normalize($value);
             }
 
             $field['value'] = $value;
