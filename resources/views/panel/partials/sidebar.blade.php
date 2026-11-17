@@ -65,11 +65,10 @@
                     Sistem
                 </p>
 
-                <a href="{{ route('filament.admin.pages.crud-generator') }}" target="_blank" rel="noopener"
-                   class="{{ $linkBase }} {{ $linkIdle }}">
+                <a href="{{ route('panel.generator') }}"
+                   class="{{ $linkBase }} {{ request()->routeIs('panel.generator') ? $linkActive : $linkIdle }}">
                     <x-panel-icon name="sparkles" class="h-5 w-5" />
                     CRUD Generator
-                    <x-panel-icon name="arrow-right-on-rectangle" class="ml-auto h-4 w-4 text-gray-300 transition group-hover:text-brand-500" />
                 </a>
             </div>
         @endif

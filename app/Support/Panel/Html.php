@@ -2,6 +2,10 @@
 
 namespace App\Support\Panel;
 
+use DateTimeInterface;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
+
 /**
  * Small HTML helpers shared by the standalone TailAdmin panel. Only trusted,
  * hard coded markup is produced here; every dynamic value is escaped.
@@ -45,8 +49,29 @@ class Html
         return self::badge((string) (int) $value, 'muted');
     }
 
+    public static function boolean(bool $value, string $true = 'Ya', string $false = 'Tidak'): string
+    {
+        return $value ? self::badge($true, 'success') : self::badge($false, 'muted');
+    }
+
     public static function text(?string $value): string
     {
         return filled($value) ? e($value) : '<span class="text-gray-400">—</span>';
+    }
+
+    public static function truncate(?string $value, int $limit = 60): string
+    {
+        return filled($value) ? e(Str::limit($value, $limit)) : '<span class="text-gray-400">—</span>';
+    }
+
+    public static function date(mixed $value, string $format = 'd/m/Y'): string
+    {
+        if (blank($value)) {
+            return '<span class="text-gray-400">—</span>';
+        }
+
+        $date = $value instanceof DateTimeInterface ? $value : Carbon::parse($value);
+
+        return e($date->format($format));
     }
 }

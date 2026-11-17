@@ -84,6 +84,10 @@
                             </div>
                             <script type="application/json" data-icon-map>@json($iconMap)</script>
 
+                        @elseif ($field['type'] === 'textarea')
+                            <textarea id="field-{{ $field['name'] }}" name="{{ $field['name'] }}" rows="4"
+                                      class="ta-textarea @error($field['name']) !border-error-500 @enderror">{{ $field['value'] }}</textarea>
+
                         @else
                             <input type="{{ $field['type'] === 'password' ? 'password' : $field['type'] }}"
                                    id="field-{{ $field['name'] }}"

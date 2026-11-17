@@ -8,7 +8,9 @@ use App\Models\Principal;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Panel\PanelResource;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\File;
 
 /**
  * Single source of truth for the standalone TailAdmin panel. Every entry
@@ -23,7 +25,7 @@ class ResourceRegistry
      */
     public static function all(): array
     {
-        return [
+        $resources = [
             'principals' => self::principals(),
             'tenants' => self::tenants(),
             'users' => self::users(),
@@ -31,6 +33,45 @@ class ResourceRegistry
             'permissions' => self::permissions(),
             'menus' => self::menus(),
         ];
+
+        foreach (self::generated() as $key => $definition) {
+            $resources[$key] ??= $definition;
+        }
+
+        return $resources;
+    }
+
+    /**
+     * Modules created by the panel CRUD generator, discovered from
+     * App\Panel\Resources. The disk is scanned once per request.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    protected static function generated(): array
+    {
+        static $resources = null;
+
+        if ($resources !== null) {
+            return $resources;
+        }
+
+        $resources = [];
+
+        foreach (File::glob(app_path('Panel/Resources/*.php')) ?: [] as $path) {
+            $class = 'App\\Panel\\Resources\\'.pathinfo($path, PATHINFO_FILENAME);
+
+            if (! class_exists($class) || ! is_subclass_of($class, PanelResource::class)) {
+                continue;
+            }
+
+            $definition = $class::definition();
+
+            if (is_array($definition) && isset($definition['model'])) {
+                $resources[$class::key()] = $definition;
+            }
+        }
+
+        return $resources;
     }
 
     /**

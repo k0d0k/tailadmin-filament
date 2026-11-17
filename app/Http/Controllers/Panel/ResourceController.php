@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use OpenSpout\Common\Entity\Row;
@@ -291,6 +292,14 @@ class ResourceController extends Controller
 
             if ($field['type'] === 'icon') {
                 $value = IconLibrary::normalize($value);
+            }
+
+            if (in_array($field['type'], ['date', 'time', 'datetime-local'], true) && filled($value)) {
+                $value = Carbon::parse($value)->format(match ($field['type']) {
+                    'date' => 'Y-m-d',
+                    'time' => 'H:i',
+                    default => 'Y-m-d\TH:i',
+                });
             }
 
             $field['value'] = $value;

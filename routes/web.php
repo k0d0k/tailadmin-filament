@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Panel\Auth\LoginController;
 use App\Http\Controllers\Panel\DashboardController;
+use App\Http\Controllers\Panel\GeneratorController;
 use App\Http\Controllers\Panel\ResourceController;
 use Illuminate\Support\Facades\Route;
 
@@ -16,6 +17,9 @@ Route::middleware('auth')->group(function () {
     Route::post('logout', [LoginController::class, 'destroy'])->name('logout');
 
     Route::get('panel', DashboardController::class)->name('panel.dashboard');
+
+    Route::get('panel/crud-generator', [GeneratorController::class, 'show'])->name('panel.generator');
+    Route::post('panel/crud-generator', [GeneratorController::class, 'generate'])->name('panel.generator.store');
 
     Route::get('panel/{resource}/export/{format}', [ResourceController::class, 'export'])->name('panel.export');
     Route::get('panel/{resource}/create', [ResourceController::class, 'create'])->name('panel.create');

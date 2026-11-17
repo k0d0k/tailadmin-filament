@@ -46,10 +46,6 @@
                         <p class="truncate text-xs text-gray-400">{{ $user?->email }}</p>
                     </div>
                     <div class="p-1.5">
-                        <a href="/admin" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5">
-                            <x-panel-icon name="cog-6-tooth" class="h-4 w-4" />
-                            Filament Admin
-                        </a>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button type="submit" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-error-600 transition hover:bg-error-50 dark:text-error-500 dark:hover:bg-error-500/10">
