@@ -1,0 +1,17 @@
+<?php
+
+namespace App\Filament\Resources\%PLURAL%\Schemas;
+
+use Filament\Schemas\Schema;
+%FORM_IMPORTS%
+
+class %MODEL%Form
+{
+    public static function configure(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+%FORM_COMPONENTS%
+            ]);
+    }
+}

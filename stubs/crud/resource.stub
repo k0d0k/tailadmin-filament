@@ -1,0 +1,44 @@
+<?php
+
+namespace App\Filament\Resources\%PLURAL%;
+
+use App\Filament\Resources\%PLURAL%\Pages\Create%MODEL%;
+use App\Filament\Resources\%PLURAL%\Pages\Edit%MODEL%;
+use App\Filament\Resources\%PLURAL%\Pages\List%PLURAL%;
+use App\Filament\Resources\%PLURAL%\Schemas\%MODEL%Form;
+use App\Filament\Resources\%PLURAL%\Tables\%PLURAL%Table;
+use App\Models\%MODEL%;
+use BackedEnum;
+use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
+use Filament\Tables\Table;
+
+class %MODEL%Resource extends Resource
+{
+    protected static ?string $model = %MODEL%::class;
+
+    protected static string|BackedEnum|null $navigationIcon = '%ICON%';
+
+    protected static ?string $navigationLabel = '%LABEL%';
+
+    protected static bool $shouldRegisterNavigation = false;
+
+    public static function form(Schema $schema): Schema
+    {
+        return %MODEL%Form::configure($schema);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return %PLURAL%Table::configure($table);
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => List%PLURAL%::route('/'),
+            'create' => Create%MODEL%::route('/create'),
+            'edit' => Edit%MODEL%::route('/{record}/edit'),
+        ];
+    }
+}

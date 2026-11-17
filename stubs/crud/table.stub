@@ -1,0 +1,30 @@
+<?php
+
+namespace App\Filament\Resources\%PLURAL%\Tables;
+
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Tables\Table;
+%TABLE_IMPORTS%
+
+class %PLURAL%Table
+{
+    public static function configure(Table $table): Table
+    {
+        return $table
+            ->columns([
+%TABLE_COLUMNS%
+            ])
+            ->recordActions([
+                EditAction::make(),
+                DeleteAction::make(),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+}

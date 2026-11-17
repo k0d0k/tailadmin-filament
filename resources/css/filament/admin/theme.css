@@ -1,0 +1,33 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@source '../../../../app/Filament/**/*';
+@source '../../../../resources/views/filament/**/*';
+
+/*
+ |--------------------------------------------------------------------------
+ | TailAdmin flavoured refinements
+ |--------------------------------------------------------------------------
+ | Filament already exposes the brand color (see AdminPanelProvider). These
+ | rules only nudge the sidebar active state towards the TailAdmin look:
+ | a solid rounded "pill" with white label instead of the default gray.
+ */
+
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn {
+    @apply bg-primary-600 shadow-sm dark:bg-primary-600;
+}
+
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn > .fi-icon,
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn > .fi-sidebar-item-label {
+    @apply text-white dark:text-white;
+}
+
+.fi-sidebar-item.fi-active
+    > .fi-sidebar-item-btn
+    > .fi-sidebar-item-grouped-border
+    > .fi-sidebar-item-grouped-border-part {
+    @apply bg-white dark:bg-white;
+}
+
+.fi-sidebar-item.fi-sidebar-item-has-url > .fi-sidebar-item-btn:hover {
+    @apply bg-gray-100 dark:bg-white/5;
+}

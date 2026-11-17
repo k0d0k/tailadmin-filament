@@ -1,0 +1,8 @@
+<?php
+
+namespace App\Policies;
+
+class %MODEL%Policy extends BaseResourcePolicy
+{
+    protected string $resource = '%RESOURCE_KEY%';
+}
