@@ -13,6 +13,10 @@
                 var theme = localStorage.getItem('tailadmin-theme');
                 var dark = theme ? theme === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
                 if (dark) document.documentElement.classList.add('dark');
+
+                if (localStorage.getItem('tailadmin-sidebar') === 'collapsed') {
+                    document.documentElement.dataset.sidebar = 'collapsed';
+                }
             } catch (e) {}
         })();
     </script>
@@ -29,7 +33,7 @@
 
         <div class="fixed inset-0 z-30 hidden bg-gray-900/50 lg:hidden" data-sidebar-backdrop></div>
 
-        <div class="lg:pl-[290px]">
+        <div class="lg:pl-[290px]" data-sidebar-content>
             @include('panel.partials.topbar')
 
             <main class="mx-auto w-full max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">

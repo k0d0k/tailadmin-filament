@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasSlug;
 use Filament\Resources\Resource;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -10,10 +11,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Menu extends Model
 {
+    use HasSlug;
+
+    /**
+     * Attribute the slug is derived from.
+     */
+    protected string $slugFrom = 'label';
+
     /**
      * @var list<string>
      */
     protected $fillable = [
+        'slug',
         'parent_id',
         'label',
         'icon',

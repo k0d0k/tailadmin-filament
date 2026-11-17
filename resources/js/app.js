@@ -5,6 +5,7 @@ import DataTable from 'datatables.net';
  * Dark mode
  * ------------------------------------------------------------------------ */
 const THEME_KEY = 'tailadmin-theme';
+const SIDEBAR_KEY = 'tailadmin-sidebar';
 
 function applyTheme(theme) {
     document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -59,6 +60,38 @@ function initShell() {
 
     document.addEventListener('click', () => {
         document.querySelectorAll('[data-dropdown-menu]').forEach((menu) => menu.classList.add('hidden'));
+    });
+}
+
+/* --------------------------------------------------------------------------
+ * Desktop sidebar collapse
+ * ------------------------------------------------------------------------ */
+function applySidebar(state) {
+    const collapsed = state === 'collapsed';
+
+    document.documentElement.dataset.sidebar = state;
+
+    try {
+        localStorage.setItem(SIDEBAR_KEY, state);
+    } catch (e) {
+        /* storage unavailable */
+    }
+
+    document.querySelectorAll('[data-sidebar-collapse]').forEach((button) => {
+        button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        button.setAttribute('title', collapsed ? 'Tampilkan menu' : 'Sembunyikan menu');
+    });
+    document.querySelectorAll('[data-collapse-icon="expanded"]').forEach((el) => el.classList.toggle('hidden', collapsed));
+    document.querySelectorAll('[data-collapse-icon="collapsed"]').forEach((el) => el.classList.toggle('hidden', !collapsed));
+}
+
+function initSidebarCollapse() {
+    applySidebar(document.documentElement.dataset.sidebar === 'collapsed' ? 'collapsed' : 'expanded');
+
+    document.querySelectorAll('[data-sidebar-collapse]').forEach((button) => {
+        button.addEventListener('click', () => {
+            applySidebar(document.documentElement.dataset.sidebar === 'collapsed' ? 'expanded' : 'collapsed');
+        });
     });
 }
 
@@ -240,6 +273,7 @@ function initIconPickers() {
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     initShell();
+    initSidebarCollapse();
     initDataTables();
     initRowActions();
     initIconPickers();

@@ -5,7 +5,7 @@
 
 @section('content')
     <form method="POST"
-          action="{{ $record ? route('panel.update', [$resourceKey, $record->getKey()]) : route('panel.store', $resourceKey) }}"
+          action="{{ $record ? route('panel.update', [$resourceKey, $record->slug]) : route('panel.store', $resourceKey) }}"
           class="mx-auto max-w-4xl space-y-6">
         @csrf
         @if ($record)

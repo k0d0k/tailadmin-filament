@@ -75,7 +75,7 @@ class ResourceController extends Controller
         $table->addColumn('actions', fn (Model $row) => view('panel.partials.row-actions', [
             'resource' => $resource,
             'permission' => $definition['resource'],
-            'id' => $row->getKey(),
+            'slug' => $row->slug,
         ])->render());
 
         $raw[] = 'actions';
@@ -129,10 +129,10 @@ class ResourceController extends Controller
      | Edit / update
      | ------------------------------------------------------------------- */
 
-    public function edit(string $resource, int $id): View
+    public function edit(string $resource, string $slug): View
     {
         $definition = ResourceRegistry::find($resource);
-        $record = $this->findRecord($definition, $id);
+        $record = $this->findRecord($definition, $slug);
 
         Gate::authorize('update', $record);
 
@@ -142,10 +142,10 @@ class ResourceController extends Controller
         ]);
     }
 
-    public function update(Request $request, string $resource, int $id): RedirectResponse
+    public function update(Request $request, string $resource, string $slug): RedirectResponse
     {
         $definition = ResourceRegistry::find($resource);
-        $record = $this->findRecord($definition, $id);
+        $record = $this->findRecord($definition, $slug);
 
         Gate::authorize('update', $record);
 
@@ -163,10 +163,10 @@ class ResourceController extends Controller
      | Delete
      | ------------------------------------------------------------------- */
 
-    public function destroy(string $resource, int $id): JsonResponse|RedirectResponse
+    public function destroy(string $resource, string $slug): JsonResponse|RedirectResponse
     {
         $definition = ResourceRegistry::find($resource);
-        $record = $this->findRecord($definition, $id);
+        $record = $this->findRecord($definition, $slug);
 
         Gate::authorize('delete', $record);
 
@@ -430,9 +430,9 @@ class ResourceController extends Controller
         return filled($search) ? (string) $search : null;
     }
 
-    protected function findRecord(array $definition, int $id): Model
+    protected function findRecord(array $definition, string $slug): Model
     {
-        return $definition['model']::query()->findOrFail($id);
+        return $definition['model']::query()->where('slug', $slug)->firstOrFail();
     }
 
     /**

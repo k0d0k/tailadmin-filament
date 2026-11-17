@@ -243,3 +243,20 @@ table.ta-table thead th.dt-ordering-desc::after {
 .dt-container > .dt-layout-row:first-child {
     min-height: 1rem;
 }
+
+/* ==========================================================================
+   Desktop sidebar collapse (topbar toggle)
+   ========================================================================== */
+[data-sidebar-content] {
+    transition: padding-left 0.3s ease;
+}
+
+@media (min-width: 1024px) {
+    html[data-sidebar='collapsed'] [data-sidebar] {
+        transform: translateX(-100%);
+    }
+
+    html[data-sidebar='collapsed'] [data-sidebar-content] {
+        padding-left: 0;
+    }
+}

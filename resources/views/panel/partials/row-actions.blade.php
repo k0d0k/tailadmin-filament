@@ -10,14 +10,14 @@
 
 <div class="flex items-center justify-end gap-1.5">
     @if ($canUpdate)
-        <a href="{{ route('panel.edit', [$resource, $id]) }}" class="ta-icon-btn" title="Ubah">
+        <a href="{{ route('panel.edit', [$resource, $slug]) }}" class="ta-icon-btn" title="Ubah">
             <x-panel-icon name="pencil" class="h-4 w-4" />
         </a>
     @endif
 
     @if ($canDelete)
         <button type="button"
-                data-delete-url="{{ route('panel.destroy', [$resource, $id]) }}"
+                data-delete-url="{{ route('panel.destroy', [$resource, $slug]) }}"
                 data-confirm="Hapus data ini? Tindakan ini tidak dapat dibatalkan."
                 class="ta-icon-btn hover:!border-error-500/40 hover:!text-error-500"
                 title="Hapus">

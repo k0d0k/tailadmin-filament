@@ -88,6 +88,7 @@ class ModuleGenerator extends CrudGenerator
         $modelPath = app_path("Models/{$model}.php");
         $this->put($modelPath, $this->render('model', [
             'MODEL' => $model,
+            'SLUG_SOURCE' => $this->slugSource($fields),
             'FILLABLE' => $this->fillable($fields),
             'CASTS' => $this->casts($fields),
         ]));
@@ -152,7 +153,7 @@ class ModuleGenerator extends CrudGenerator
      */
     protected function normalizeFields(array $fields): array
     {
-        $reserved = ['id', 'created_at', 'updated_at', 'deleted_at'];
+        $reserved = ['id', 'slug', 'created_at', 'updated_at', 'deleted_at'];
 
         return collect($fields)
             ->map(function (array $field): array {
@@ -208,7 +209,9 @@ class ModuleGenerator extends CrudGenerator
      */
     protected function panelColumns(array $fields): string
     {
-        return collect($this->tableFields($fields))
+        $slug = "                ['data' => 'slug', 'title' => 'Slug', 'orderable' => true, 'value' => fn (\$r) => '<span class=\"font-mono text-xs text-gray-500 dark:text-gray-400\">'.e(\$r->slug).'</span>'],";
+
+        $columns = collect($this->tableFields($fields))
             ->map(function (array $field): string {
                 $orderable = in_array($field['type'], ['text', 'boolean'], true) ? 'false' : 'true';
 
@@ -216,6 +219,8 @@ class ModuleGenerator extends CrudGenerator
                     .", 'orderable' => {$orderable}, 'value' => fn (\$r) => ".$this->columnValue($field).'],';
             })
             ->implode("\n");
+
+        return $slug."\n".$columns;
     }
 
     /**
@@ -241,10 +246,12 @@ class ModuleGenerator extends CrudGenerator
      */
     protected function searchList(array $fields): string
     {
-        return collect($fields)
+        $terms = collect($fields)
             ->filter(fn (array $field): bool => in_array($field['type'], ['string', 'text', 'email'], true))
             ->map(fn (array $field): string => $this->quote($field['name']))
-            ->implode(', ');
+            ->prepend($this->quote('slug'));
+
+        return $terms->implode(', ');
     }
 
     /**
@@ -276,7 +283,9 @@ class ModuleGenerator extends CrudGenerator
      */
     protected function panelFields(array $fields): string
     {
-        return collect($this->formFields($fields))
+        $slug = "                ['name' => 'slug', 'label' => 'Slug', 'type' => 'text', 'rules' => ['nullable', 'string', 'max:255'], 'update_rules' => [], 'col' => 'half', 'help' => 'Alamat URL record. Kosongkan untuk otomatis dari nama.'],";
+
+        $fieldsHtml = collect($this->formFields($fields))
             ->map(function (array $field): string {
                 $type = $this->panelFieldType($field['type']);
                 $options = $type === 'select' && $field['options'] !== []
@@ -291,6 +300,8 @@ class ModuleGenerator extends CrudGenerator
                     .($type === 'textarea' ? 'full' : 'half')."', 'help' => null],";
             })
             ->implode("\n");
+
+        return $slug."\n".$fieldsHtml;
     }
 
     /**

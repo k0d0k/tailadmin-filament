@@ -135,17 +135,19 @@ class ResourceRegistry
             'query' => fn (): Builder => Principal::query()->withCount(['tenants', 'users']),
             'columns' => [
                 ['data' => 'name', 'title' => 'Nama', 'orderable' => true, 'value' => fn ($r) => Html::text($r->name)],
+                self::slugColumn(),
                 ['data' => 'code', 'title' => 'Kode', 'orderable' => true, 'value' => fn ($r) => '<span class="font-mono text-xs">'.Html::text($r->code).'</span>'],
                 ['data' => 'email', 'title' => 'Email', 'orderable' => true, 'value' => fn ($r) => Html::text($r->email)],
                 ['data' => 'tenants_count', 'title' => 'Tenant', 'orderable' => false, 'className' => 'text-center', 'value' => fn ($r) => Html::count($r->tenants_count)],
                 ['data' => 'is_active', 'title' => 'Status', 'orderable' => false, 'value' => fn ($r) => Html::status($r->is_active)],
             ],
-            'search' => ['name', 'code', 'email'],
+            'search' => ['name', 'slug', 'code', 'email'],
             'filters' => [
                 self::selectFilter('is_active', 'Status', ['1' => 'Aktif', '0' => 'Nonaktif']),
             ],
             'fields' => [
                 self::text('name', 'Nama', ['required', 'string', 'max:255'], 'half'),
+                self::slugField('principals'),
                 self::text('code', 'Kode', ['nullable', 'string', 'max:50'], 'half'),
                 self::email('email', 'Email', ['nullable', 'email', 'max:255'], 'half'),
                 self::toggle('is_active', 'Aktif', 'half'),
@@ -170,12 +172,13 @@ class ResourceRegistry
             'query' => fn (): Builder => Tenant::query()->with('principal')->withCount('users'),
             'columns' => [
                 ['data' => 'name', 'title' => 'Nama', 'orderable' => true, 'value' => fn ($r) => Html::text($r->name)],
+                self::slugColumn(),
                 ['data' => 'code', 'title' => 'Kode', 'orderable' => true, 'value' => fn ($r) => '<span class="font-mono text-xs">'.Html::text($r->code).'</span>'],
                 ['data' => 'principal.name', 'title' => 'Principal', 'orderable' => false, 'value' => fn ($r) => Html::text($r->principal?->name)],
                 ['data' => 'users_count', 'title' => 'User', 'orderable' => false, 'className' => 'text-center', 'value' => fn ($r) => Html::count($r->users_count)],
                 ['data' => 'is_active', 'title' => 'Status', 'orderable' => false, 'value' => fn ($r) => Html::status($r->is_active)],
             ],
-            'search' => ['name', 'code'],
+            'search' => ['name', 'slug', 'code'],
             'filters' => [
                 self::selectFilter('principal_id', 'Principal', fn () => Principal::query()->orderBy('name')->pluck('name', 'id')->all()),
                 self::selectFilter('is_active', 'Status', ['1' => 'Aktif', '0' => 'Nonaktif']),
@@ -183,6 +186,7 @@ class ResourceRegistry
             'fields' => [
                 self::select('principal_id', 'Principal', fn () => Principal::query()->orderBy('name')->pluck('name', 'id')->all(), ['required', 'exists:principals,id'], 'half'),
                 self::text('name', 'Nama', ['required', 'string', 'max:255'], 'half'),
+                self::slugField('tenants'),
                 self::text('code', 'Kode', ['nullable', 'string', 'max:50'], 'half'),
                 self::toggle('is_active', 'Aktif', 'half'),
             ],
@@ -206,13 +210,14 @@ class ResourceRegistry
             'query' => fn (): Builder => User::query()->with(['roles', 'principal', 'tenant']),
             'columns' => [
                 ['data' => 'name', 'title' => 'Nama', 'orderable' => true, 'value' => fn ($r) => '<div class="font-medium text-gray-800 dark:text-gray-100">'.e($r->name).'</div>'],
+                self::slugColumn(),
                 ['data' => 'email', 'title' => 'Email', 'orderable' => true, 'value' => fn ($r) => Html::text($r->email)],
                 ['data' => 'roles', 'title' => 'Role', 'orderable' => false, 'value' => fn ($r) => Html::badges($r->roles->pluck('name'), 'brand')],
                 ['data' => 'principal.name', 'title' => 'Principal', 'orderable' => false, 'value' => fn ($r) => Html::text($r->principal?->name)],
                 ['data' => 'tenant.name', 'title' => 'Tenant', 'orderable' => false, 'value' => fn ($r) => Html::text($r->tenant?->name)],
                 ['data' => 'created_at', 'title' => 'Dibuat', 'orderable' => true, 'value' => fn ($r) => '<span class="text-gray-500 dark:text-gray-400">'.e($r->created_at?->format('d M Y')).'</span>'],
             ],
-            'search' => ['name', 'email'],
+            'search' => ['name', 'slug', 'email'],
             'filters' => [
                 self::selectFilter('role', 'Role', fn () => Role::query()->orderBy('name')->pluck('name', 'name')->all()),
                 self::selectFilter('principal_id', 'Principal', fn () => Principal::query()->orderBy('name')->pluck('name', 'id')->all()),
@@ -223,6 +228,7 @@ class ResourceRegistry
             ],
             'fields' => [
                 self::text('name', 'Nama', ['required', 'string', 'max:255'], 'half'),
+                self::slugField('users'),
                 self::email('email', 'Email', ['required', 'email', 'max:255', 'unique:users,email'], 'half', ['required', 'email', 'max:255', 'unique:users,email,{id}']),
                 self::password('password', 'Password', 'full'),
                 self::select('principal_id', 'Principal', fn () => Principal::query()->orderBy('name')->pluck('name', 'id')->all(), ['nullable', 'exists:principals,id'], 'half'),
@@ -249,6 +255,7 @@ class ResourceRegistry
             'query' => fn (): Builder => Role::query()->withCount(['permissions', 'users']),
             'columns' => [
                 ['data' => 'name', 'title' => 'Nama', 'orderable' => true, 'value' => fn ($r) => '<span class="font-medium text-gray-800 dark:text-gray-100">'.e($r->name).'</span>'],
+                self::slugColumn(),
                 ['data' => 'guard_name', 'title' => 'Guard', 'orderable' => false, 'value' => fn ($r) => Html::badge($r->guard_name, 'muted')],
                 ['data' => 'permissions_count', 'title' => 'Permission', 'orderable' => false, 'className' => 'text-center', 'value' => fn ($r) => Html::count($r->permissions_count)],
                 ['data' => 'users_count', 'title' => 'User', 'orderable' => false, 'className' => 'text-center', 'value' => fn ($r) => Html::count($r->users_count)],
@@ -256,6 +263,7 @@ class ResourceRegistry
             'filters' => [],
             'fields' => [
                 self::text('name', 'Nama', ['required', 'string', 'max:255', 'unique:roles,name'], 'half', ['required', 'string', 'max:255', 'unique:roles,name,{id}']),
+                self::slugField('roles'),
                 self::text('guard_name', 'Guard', ['required', 'string', 'max:255'], 'half'),
                 self::multiselect('permissions', 'Hak Akses', fn () => self::permissionOptions(), 'full', 'permissions', 'Semua hak akses yang dimiliki role ini.'),
             ],
@@ -279,12 +287,14 @@ class ResourceRegistry
             'query' => fn (): Builder => Permission::query()->withCount(['roles']),
             'columns' => [
                 ['data' => 'name', 'title' => 'Nama', 'orderable' => true, 'value' => fn ($r) => '<span class="font-mono text-xs text-gray-700 dark:text-gray-200">'.e($r->name).'</span>'],
+                self::slugColumn(),
                 ['data' => 'guard_name', 'title' => 'Guard', 'orderable' => false, 'value' => fn ($r) => Html::badge($r->guard_name, 'muted')],
                 ['data' => 'roles_count', 'title' => 'Role', 'orderable' => false, 'className' => 'text-center', 'value' => fn ($r) => Html::count($r->roles_count)],
             ],
             'filters' => [],
             'fields' => [
                 self::text('name', 'Nama', ['required', 'string', 'max:255', 'unique:permissions,name'], 'half', ['required', 'string', 'max:255', 'unique:permissions,name,{id}']),
+                self::slugField('permissions'),
                 self::text('guard_name', 'Guard', ['required', 'string', 'max:255'], 'half'),
             ],
             'default_sort' => ['name', 'asc'],
@@ -307,17 +317,19 @@ class ResourceRegistry
             'query' => fn (): Builder => Menu::query()->with('parent'),
             'columns' => [
                 ['data' => 'label', 'title' => 'Label', 'orderable' => true, 'value' => fn ($r) => '<span class="font-medium text-gray-800 dark:text-gray-100">'.e($r->label).'</span>'],
+                self::slugColumn(),
                 ['data' => 'parent.label', 'title' => 'Induk', 'orderable' => false, 'value' => fn ($r) => Html::text($r->parent?->label)],
                 ['data' => 'permission', 'title' => 'Permission', 'orderable' => false, 'value' => fn ($r) => $r->permission ? Html::badge($r->permission, 'muted') : '<span class="text-gray-400">—</span>'],
                 ['data' => 'sort', 'title' => 'Urut', 'orderable' => true, 'className' => 'text-center', 'value' => fn ($r) => '<span class="text-gray-500 dark:text-gray-400">'.(int) $r->sort.'</span>'],
                 ['data' => 'is_active', 'title' => 'Status', 'orderable' => false, 'value' => fn ($r) => Html::status($r->is_active)],
             ],
-            'search' => ['label', 'url', 'permission'],
+            'search' => ['label', 'slug', 'url', 'permission'],
             'filters' => [
                 self::selectFilter('is_active', 'Status', ['1' => 'Aktif', '0' => 'Nonaktif']),
             ],
             'fields' => [
                 self::text('label', 'Label', ['required', 'string', 'max:255'], 'half'),
+                self::slugField('menus'),
                 self::select('parent_id', 'Menu Induk', fn ($resource) => self::menuParentOptions($resource), ['nullable', 'exists:menus,id'], 'half'),
                 self::icon('icon', 'Ikon', ['nullable', 'string'], 'half'),
                 self::number('sort', 'Urutan', ['nullable', 'integer', 'min:0'], 'half'),
@@ -435,6 +447,40 @@ class ResourceRegistry
     protected static function toggle(string $name, string $label, string $col = 'half', ?string $help = null): array
     {
         return compact('name', 'label', 'col', 'help') + ['type' => 'toggle', 'rules' => ['boolean']];
+    }
+
+    /**
+     * Slug column shown in the listing of every module.
+     *
+     * @return array<string, mixed>
+     */
+    protected static function slugColumn(): array
+    {
+        return [
+            'data' => 'slug',
+            'title' => 'Slug',
+            'orderable' => true,
+            'value' => fn ($r) => '<span class="font-mono text-xs text-gray-500 dark:text-gray-400">'.e($r->slug).'</span>',
+        ];
+    }
+
+    /**
+     * Slug field rendered in the form of every module. It is used as the
+     * record identifier in the panel URLs.
+     *
+     * @return array<string, mixed>
+     */
+    protected static function slugField(string $table): array
+    {
+        return [
+            'name' => 'slug',
+            'label' => 'Slug',
+            'type' => 'text',
+            'rules' => ['nullable', 'string', 'max:255', "unique:{$table},slug"],
+            'update_rules' => ['nullable', 'string', 'max:255', "unique:{$table},slug,{id}"],
+            'col' => 'half',
+            'help' => 'Alamat URL record. Kosongkan untuk otomatis dari nama.',
+        ];
     }
 
     /* ---------------------------------------------------------------------

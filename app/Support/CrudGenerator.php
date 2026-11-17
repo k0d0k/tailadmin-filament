@@ -89,6 +89,7 @@ class CrudGenerator
         $modelPath = app_path("Models/{$model}.php");
         $this->put($modelPath, $this->render('model', [
             'MODEL' => $model,
+            'SLUG_SOURCE' => $this->slugSource($fields),
             'FILLABLE' => $this->fillable($fields),
             'CASTS' => $this->casts($fields),
         ]));
@@ -202,7 +203,7 @@ class CrudGenerator
      */
     protected function normalizeFields(array $fields): array
     {
-        $reserved = ['id', 'created_at', 'updated_at', 'deleted_at'];
+        $reserved = ['id', 'slug', 'created_at', 'updated_at', 'deleted_at'];
 
         return collect($fields)
             ->map(function (array $field): array {
@@ -286,6 +287,31 @@ class CrudGenerator
         return collect($fields)
             ->map(fn (array $field): string => "        '{$field['name']}',")
             ->implode("\n");
+    }
+
+    /**
+     * Pick the field the slug is generated from: the first common human
+     * readable name, otherwise the first textual field.
+     *
+     * @param  array<int, array<string, mixed>>  $fields
+     */
+    protected function slugSource(array $fields): string
+    {
+        foreach (['name', 'title', 'label', 'subject', 'code', 'email'] as $candidate) {
+            foreach ($fields as $field) {
+                if ($field['name'] === $candidate) {
+                    return $candidate;
+                }
+            }
+        }
+
+        foreach ($fields as $field) {
+            if (in_array($field['type'], ['string', 'email', 'text', 'select'], true)) {
+                return $field['name'];
+            }
+        }
+
+        return $fields[0]['name'] ?? 'name';
     }
 
     /**

@@ -14,6 +14,12 @@
                 <x-panel-icon name="bars-3" class="h-5 w-5" />
             </button>
 
+            <button type="button" data-sidebar-collapse class="ta-icon-btn hidden lg:inline-flex"
+                    aria-label="Sembunyikan menu" aria-expanded="true" title="Sembunyikan menu">
+                <span data-collapse-icon="expanded"><x-panel-icon name="chevron-double-left" class="h-5 w-5" /></span>
+                <span data-collapse-icon="collapsed" class="hidden"><x-panel-icon name="chevron-double-right" class="h-5 w-5" /></span>
+            </button>
+
             <div class="min-w-0">
                 <h1 class="truncate text-lg font-semibold text-gray-800 dark:text-gray-100">@yield('title', 'Dashboard')</h1>
                 <p class="hidden truncate text-xs text-gray-400 sm:block">@yield('subtitle', 'Kelola data panel administrasi')</p>
@@ -46,6 +52,12 @@
                         <p class="truncate text-xs text-gray-400">{{ $user?->email }}</p>
                     </div>
                     <div class="p-1.5">
+                        <a href="{{ route('panel.password.edit') }}"
+                           class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5">
+                            <x-panel-icon name="lock-closed" class="h-4 w-4" />
+                            Ubah Password
+                        </a>
+
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button type="submit" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-error-600 transition hover:bg-error-50 dark:text-error-500 dark:hover:bg-error-500/10">
