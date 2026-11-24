@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasSlug;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
@@ -10,12 +11,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, HasSlug, Notifiable;
+    use Auditable, HasApiTokens, HasFactory, HasRoles, HasSlug, Notifiable;
 
     /**
      * The attributes that are mass assignable.

@@ -1,6 +1,6 @@
 @extends('layouts.tailadmin')
 
-@section('title', ($record ? 'Ubah ' : 'Tambah ').$singular)
+@section('title', __($record ? 'ui.form.edit' : 'ui.form.add', ['name' => $singular]))
 @section('subtitle', $definition['description'])
 
 @section('content')
@@ -16,13 +16,13 @@
             <div class="ta-card-header">
                 <div>
                     <h2 class="text-base font-semibold text-gray-800 dark:text-gray-100">
-                        {{ $record ? 'Ubah' : 'Tambah' }} {{ $singular }}
+                        {{ __($record ? 'ui.form.edit' : 'ui.form.add', ['name' => $singular]) }}
                     </h2>
-                    <p class="text-xs text-gray-400">Lengkapi data di bawah ini lalu simpan.</p>
+                    <p class="text-xs text-gray-400">{{ __('ui.form.complete') }}</p>
                 </div>
                 <a href="{{ route('panel.index', $resourceKey) }}" class="ta-btn-ghost !py-2 !text-xs">
                     <x-panel-icon name="x-mark" class="h-4 w-4" />
-                    Batal
+                    {{ __('ui.actions.cancel') }}
                 </a>
             </div>
 
@@ -44,12 +44,12 @@
                                 <input type="checkbox" id="field-{{ $field['name'] }}" name="{{ $field['name'] }}" value="1"
                                        class="h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500/40 dark:border-gray-600 dark:bg-gray-900"
                                        @checked((bool) $field['value'])>
-                                <span class="text-sm text-gray-600 dark:text-gray-300">{{ $field['help'] ?? 'Aktifkan' }}</span>
+                                <span class="text-sm text-gray-600 dark:text-gray-300">{{ $field['help'] ?? __('ui.fields.active') }}</span>
                             </label>
 
                         @elseif ($field['type'] === 'select')
                             <select id="field-{{ $field['name'] }}" name="{{ $field['name'] }}" class="ta-select">
-                                <option value="">— Pilih —</option>
+                                <option value="">{{ __('ui.actions.choose') }}</option>
                                 @foreach ($field['options'] as $value => $label)
                                     <option value="{{ $value }}" @selected((string) $field['value'] === (string) $value)>{{ $label }}</option>
                                 @endforeach
@@ -76,7 +76,7 @@
                                     {!! \App\Support\Panel\IconLibrary::render($field['value'] ?: 'bars-3', 'h-6 w-6') !!}
                                 </span>
                                 <select id="field-{{ $field['name'] }}" name="{{ $field['name'] }}" data-icon-select class="ta-select">
-                                    <option value="">— Pilih —</option>
+                                    <option value="">{{ __('ui.actions.choose') }}</option>
                                     @foreach ($field['options'] as $value => $label)
                                         <option value="{{ $value }}" @selected((string) $field['value'] === (string) $value)>{{ $label }}</option>
                                     @endforeach
@@ -109,10 +109,10 @@
             </div>
 
             <div class="flex items-center justify-end gap-3 border-t border-gray-100 px-5 py-4 dark:border-gray-800">
-                <a href="{{ route('panel.index', $resourceKey) }}" class="ta-btn-ghost">Batal</a>
+                <a href="{{ route('panel.index', $resourceKey) }}" class="ta-btn-ghost">{{ __('ui.actions.cancel') }}</a>
                 <button type="submit" class="ta-btn-primary">
                     <x-panel-icon name="plus" class="h-4 w-4 rotate-45" />
-                    Simpan
+                    {{ __('ui.actions.save') }}
                 </button>
             </div>
         </div>

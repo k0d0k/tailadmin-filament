@@ -33,6 +33,6 @@ class PasswordController extends Controller
 
         return redirect()
             ->route('panel.password.edit')
-            ->with('status', 'Password berhasil diperbarui.');
+            ->with('status', __('ui.password.updated'));
     }
 }

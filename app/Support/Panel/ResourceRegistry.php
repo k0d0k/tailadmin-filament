@@ -174,6 +174,10 @@ class ResourceRegistry
                 ['data' => 'name', 'title' => 'Nama', 'orderable' => true, 'value' => fn ($r) => Html::text($r->name)],
                 self::slugColumn(),
                 ['data' => 'code', 'title' => 'Kode', 'orderable' => true, 'value' => fn ($r) => '<span class="font-mono text-xs">'.Html::text($r->code).'</span>'],
+                ['data' => 'database', 'title' => 'Database', 'orderable' => false, 'value' => fn ($r) => '<span class="font-mono text-xs text-gray-500 dark:text-gray-400">'.e($r->database ?? '—').'</span>'],
+                ['data' => 'provisioned_at', 'title' => 'Provisi', 'orderable' => false, 'value' => fn ($r) => $r->provision_error !== null
+                    ? Html::badge('Error', 'danger')
+                    : ($r->isProvisioned() ? Html::badge('Siap', 'success') : Html::badge('Menunggu', 'warning'))],
                 ['data' => 'principal.name', 'title' => 'Principal', 'orderable' => false, 'value' => fn ($r) => Html::text($r->principal?->name)],
                 ['data' => 'users_count', 'title' => 'User', 'orderable' => false, 'className' => 'text-center', 'value' => fn ($r) => Html::count($r->users_count)],
                 ['data' => 'is_active', 'title' => 'Status', 'orderable' => false, 'value' => fn ($r) => Html::status($r->is_active)],

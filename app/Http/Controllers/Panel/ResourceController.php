@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Writer\XLSX\Writer as XlsxWriter;
+use Throwable;
 use Yajra\DataTables\Facades\DataTables;
 
 /**
@@ -228,8 +229,203 @@ class ResourceController extends Controller
     }
 
     /* ---------------------------------------------------------------------
+     | Import
+     | ------------------------------------------------------------------- */
+
+    public function import(Request $request, string $resource): JsonResponse|RedirectResponse
+    {
+        $definition = ResourceRegistry::find($resource);
+
+        Gate::authorize('create', $definition['model']);
+
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:csv,txt', 'max:5120'],
+        ]);
+
+        [$headers, $rows] = $this->readCsv($request->file('file')->getRealPath());
+        $map = $this->importColumnMap($definition, $headers);
+
+        $imported = 0;
+        $skipped = 0;
+        $errors = [];
+        $line = 1;
+
+        foreach ($rows as $row) {
+            $line++;
+
+            $attributes = [];
+            $empty = true;
+
+            foreach ($map as $index => $column) {
+                $value = isset($row[$index]) ? trim((string) $row[$index]) : '';
+                $attributes[$column] = $value === '' ? null : $value;
+
+                if ($value !== '') {
+                    $empty = false;
+                }
+            }
+
+            if ($empty) {
+                $skipped++;
+
+                continue;
+            }
+
+            // Blank credentials must not overwrite the model defaults: skip the
+            // password so the column keeps its value and let HasSlug build one.
+            foreach (['password', 'slug'] as $optional) {
+                if (array_key_exists($optional, $attributes) && blank($attributes[$optional])) {
+                    unset($attributes[$optional]);
+                }
+            }
+
+            try {
+                $definition['model']::create($attributes);
+                $imported++;
+            } catch (Throwable $exception) {
+                $skipped++;
+                $errors[] = ['row' => $line, 'message' => $exception->getMessage()];
+            }
+        }
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status' => 'ok',
+                'imported' => $imported,
+                'skipped' => $skipped,
+                'errors' => $errors,
+            ]);
+        }
+
+        return redirect()
+            ->route('panel.index', $resource)
+            ->with('status', __('ui.import.success', ['count' => $imported]));
+    }
+
+    /**
+     * Stream the header row of importable columns so users can fill it in.
+     */
+    public function importTemplate(string $resource)
+    {
+        $definition = ResourceRegistry::find($resource);
+
+        Gate::authorize('viewAny', $definition['model']);
+
+        $columns = $this->importableColumns($definition);
+        $filename = Str::slug($definition['title']).'-import-template.csv';
+
+        return response()->streamDownload(function () use ($columns) {
+            $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF");
+            fputcsv($out, $columns);
+            fclose($out);
+        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    /* ---------------------------------------------------------------------
      | Helpers
      | ------------------------------------------------------------------- */
+
+    /**
+     * Read a CSV file into a header row plus data rows, sniffing the delimiter
+     * (`;` or `,`) and stripping a UTF-8 BOM from the header.
+     *
+     * @return array{0: array<int, string>, 1: array<int, array<int, string|null>>}
+     */
+    protected function readCsv(string $path): array
+    {
+        $handle = fopen($path, 'r');
+
+        if ($handle === false) {
+            return [[], []];
+        }
+
+        $firstLine = fgets($handle);
+        $delimiter = $firstLine !== false && substr_count($firstLine, ';') > substr_count($firstLine, ',') ? ';' : ',';
+
+        rewind($handle);
+
+        $headers = fgetcsv($handle, null, $delimiter, '"', '\\') ?: [];
+
+        if (isset($headers[0])) {
+            $headers[0] = preg_replace('/^\xEF\xBB\xBF/', '', (string) $headers[0]);
+        }
+
+        $rows = [];
+
+        while (($row = fgetcsv($handle, null, $delimiter, '"', '\\')) !== false) {
+            if ($row === [null]) {
+                continue;
+            }
+
+            $rows[] = $row;
+        }
+
+        fclose($handle);
+
+        return [$headers, $rows];
+    }
+
+    /**
+     * Map CSV header positions to importable model columns, ignoring any
+     * unknown/extra header the user may have left in the file.
+     *
+     * @param  array<int, string>  $headers
+     * @return array<int, string>
+     */
+    protected function importColumnMap(array $definition, array $headers): array
+    {
+        $importable = $this->importableColumns($definition);
+        $lookup = array_combine(array_map('strtolower', $importable), $importable);
+
+        $map = [];
+
+        foreach ($headers as $index => $header) {
+            $column = $lookup[strtolower(trim((string) $header))] ?? null;
+
+            if ($column !== null) {
+                $map[$index] = $column;
+            }
+        }
+
+        return $map;
+    }
+
+    /**
+     * Columns that may be imported: they must exist on the model table, be mass
+     * assignable and be declared as a panel field (the slug is always allowed).
+     *
+     * @return array<int, string>
+     */
+    protected function importableColumns(array $definition): array
+    {
+        $modelClass = $definition['model'];
+        $model = new $modelClass();
+
+        $native = array_map('strtolower', $this->nativeColumns($modelClass));
+        $fillable = array_map('strtolower', $model->getFillable());
+
+        $names = array_map(fn ($field) => $field['name'], $definition['fields']);
+        $names[] = 'slug';
+
+        $columns = [];
+
+        foreach ($names as $name) {
+            $lower = strtolower($name);
+
+            if (! in_array($lower, $native, true)) {
+                continue;
+            }
+
+            if ($fillable !== [] && ! in_array($lower, $fillable, true)) {
+                continue;
+            }
+
+            $columns[] = $name;
+        }
+
+        return array_values(array_unique($columns));
+    }
 
     /**
      * @return array<string, mixed>

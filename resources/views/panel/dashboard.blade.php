@@ -1,7 +1,7 @@
 @extends('layouts.tailadmin')
 
-@section('title', 'Dashboard')
-@section('subtitle', 'Ringkasan struktur organisasi dan hak akses')
+@section('title', __('ui.dashboard.title'))
+@section('subtitle', __('ui.dashboard.subtitle'))
 
 @php
     $tone = [
@@ -33,20 +33,20 @@
         <div class="ta-card {{ $canViewPrincipals ? 'xl:col-span-2' : 'xl:col-span-3' }}">
             <div class="ta-card-header">
                 <div>
-                    <h2 class="text-base font-semibold text-gray-800 dark:text-gray-100">User Terbaru</h2>
-                    <p class="text-xs text-gray-400">5 akun yang paling baru dibuat</p>
+                    <h2 class="text-base font-semibold text-gray-800 dark:text-gray-100">{{ __('ui.dashboard.recent_users') }}</h2>
+                    <p class="text-xs text-gray-400">{{ __('ui.dashboard.recent_users_hint') }}</p>
                 </div>
-                <a href="{{ route('panel.index', 'users') }}" class="ta-btn-ghost !py-2 !text-xs">Lihat semua</a>
+                <a href="{{ route('panel.index', 'users') }}" class="ta-btn-ghost !py-2 !text-xs">{{ __('ui.actions.view_all') }}</a>
             </div>
 
             <div class="overflow-x-auto">
                 <table class="ta-table w-full min-w-[520px]">
                     <thead>
                         <tr>
-                            <th>Nama</th>
-                            <th>Role</th>
-                            <th>Principal</th>
-                            <th>Dibuat</th>
+                            <th>{{ __('ui.fields.name') }}</th>
+                            <th>{{ __('ui.fields.role') }}</th>
+                            <th>{{ __('ui.profile.principal') }}</th>
+                            <th>{{ __('ui.fields.created_at') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -70,7 +70,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="py-10 text-center text-gray-400">Belum ada user.</td>
+                                <td colspan="4" class="py-10 text-center text-gray-400">{{ __('ui.dashboard.no_users') }}</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -83,8 +83,8 @@
         <div class="ta-card">
             <div class="ta-card-header">
                 <div>
-                    <h2 class="text-base font-semibold text-gray-800 dark:text-gray-100">Principal</h2>
-                    <p class="text-xs text-gray-400">Tenant &amp; user per principal</p>
+                    <h2 class="text-base font-semibold text-gray-800 dark:text-gray-100">{{ __('ui.profile.principal') }}</h2>
+                    <p class="text-xs text-gray-400">{{ __('ui.dashboard.principal_hint') }}</p>
                 </div>
             </div>
 
@@ -93,15 +93,15 @@
                     <li class="flex items-center justify-between gap-3 px-5 py-4">
                         <div class="min-w-0">
                             <p class="truncate text-sm font-medium text-gray-800 dark:text-gray-100">{{ $principal->name }}</p>
-                            <p class="text-xs text-gray-400">{{ $principal->code ?: 'tanpa kode' }}</p>
+                            <p class="text-xs text-gray-400">{{ $principal->code ?: __('ui.dashboard.no_code') }}</p>
                         </div>
                         <div class="flex shrink-0 items-center gap-2">
-                            <span class="ta-badge-muted">{{ $principal->tenants_count }} tenant</span>
-                            <span class="ta-badge-brand">{{ $principal->users_count }} user</span>
+                            <span class="ta-badge-muted">{{ __('ui.dashboard.tenant_count', ['count' => $principal->tenants_count]) }}</span>
+                            <span class="ta-badge-brand">{{ __('ui.dashboard.user_count', ['count' => $principal->users_count]) }}</span>
                         </div>
                     </li>
                 @empty
-                    <li class="px-5 py-10 text-center text-gray-400">Belum ada principal.</li>
+                    <li class="px-5 py-10 text-center text-gray-400">{{ __('ui.dashboard.no_principals') }}</li>
                 @endforelse
             </ul>
         </div>

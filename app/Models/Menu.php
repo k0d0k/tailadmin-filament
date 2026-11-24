@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasSlug;
+use App\Support\Panel\ResourceRegistry;
 use Filament\Resources\Resource;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Menu extends Model
 {
-    use HasSlug;
+    use Auditable, HasSlug;
 
     /**
      * Attribute the slug is derived from.
@@ -88,5 +90,27 @@ class Menu extends Model
         }
 
         return url($this->url);
+    }
+
+    /**
+     * Resolve the target URL for this menu inside the standalone TailAdmin
+     * panel, using the manual URL first and the panel resource registry as a
+     * fallback. Filament-only menus (resource classes) return null here.
+     */
+    public function panelUrl(): ?string
+    {
+        if (filled($this->url)) {
+            if (str_starts_with($this->url, 'http://') || str_starts_with($this->url, 'https://')) {
+                return $this->url;
+            }
+
+            return url($this->url);
+        }
+
+        if (filled($this->resource) && ResourceRegistry::has($this->resource)) {
+            return route('panel.index', $this->resource);
+        }
+
+        return null;
     }
 }

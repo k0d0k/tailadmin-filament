@@ -24,6 +24,7 @@
 /vendor
 /tailadmin-filament.zip
 /database/*.sqlite
+/database/tenants
 Homestead.json
 Homestead.yaml
 Thumbs.db

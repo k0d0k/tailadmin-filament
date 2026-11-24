@@ -6,6 +6,7 @@ use App\Models\Principal;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Acl;
+use App\Support\Roles;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -33,6 +34,14 @@ class AdminUserSeeder extends Seeder
         $admin->syncRoles([Acl::SUPER_ADMIN_ROLE]);
 
         $this->account(
+            'operator@example.com',
+            'Operator',
+            [Roles::OPERATOR],
+            null,
+            null,
+        );
+
+        $this->account(
             'principal@example.com',
             'Principal Admin',
             ['principal'],
@@ -43,7 +52,7 @@ class AdminUserSeeder extends Seeder
         $this->account(
             'tenant@example.com',
             'Tenant Admin',
-            ['tenant'],
+            [Roles::TENANT_ADMIN],
             $principal?->id,
             $tenant?->id,
         );

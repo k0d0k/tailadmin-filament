@@ -7,23 +7,120 @@
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
+/* ==========================================================================
+   Skins — runtime palettes selected via the `data-skin` attribute on <html>.
+   Every palette only defines the `--skin-brand-*` scale; the Tailwind theme
+   below maps `--color-brand-*` onto it, so utilities like `bg-brand-500`
+   follow the active skin without a rebuild.
+   ========================================================================== */
+:root,
+[data-skin='indigo'] {
+    --skin-brand-25: #f8faff;
+    --skin-brand-50: #ecf3ff;
+    --skin-brand-100: #dde9ff;
+    --skin-brand-200: #c2d6ff;
+    --skin-brand-300: #9cb9ff;
+    --skin-brand-400: #7592ff;
+    --skin-brand-500: #465fff;
+    --skin-brand-600: #3641f5;
+    --skin-brand-700: #2a31d8;
+    --skin-brand-800: #252dae;
+    --skin-brand-900: #262e89;
+    --skin-brand-950: #161950;
+}
+
+[data-skin='white'] {
+    --skin-brand-25: #fcfcfd;
+    --skin-brand-50: #f8fafc;
+    --skin-brand-100: #f1f5f9;
+    --skin-brand-200: #e2e8f0;
+    --skin-brand-300: #cbd5e1;
+    --skin-brand-400: #94a3b8;
+    --skin-brand-500: #475569;
+    --skin-brand-600: #334155;
+    --skin-brand-700: #1e293b;
+    --skin-brand-800: #172033;
+    --skin-brand-900: #0f172a;
+    --skin-brand-950: #020617;
+}
+
+[data-skin='hijau'] {
+    --skin-brand-25: #f2fdf8;
+    --skin-brand-50: #ecfdf5;
+    --skin-brand-100: #d1fae5;
+    --skin-brand-200: #a7f3d0;
+    --skin-brand-300: #6ee7b7;
+    --skin-brand-400: #34d399;
+    --skin-brand-500: #10b981;
+    --skin-brand-600: #059669;
+    --skin-brand-700: #047857;
+    --skin-brand-800: #065f46;
+    --skin-brand-900: #064e3b;
+    --skin-brand-950: #022c22;
+}
+
+[data-skin='baby-blue'] {
+    --skin-brand-25: #f5fbff;
+    --skin-brand-50: #f0f9ff;
+    --skin-brand-100: #e0f2fe;
+    --skin-brand-200: #bae6fd;
+    --skin-brand-300: #7dd3fc;
+    --skin-brand-400: #38bdf8;
+    --skin-brand-500: #0ea5e9;
+    --skin-brand-600: #0284c7;
+    --skin-brand-700: #0369a1;
+    --skin-brand-800: #075985;
+    --skin-brand-900: #0c4a6e;
+    --skin-brand-950: #082f49;
+}
+
+[data-skin='teal'] {
+    --skin-brand-25: #f2fdfb;
+    --skin-brand-50: #f0fdfa;
+    --skin-brand-100: #ccfbf1;
+    --skin-brand-200: #99f6e4;
+    --skin-brand-300: #5eead4;
+    --skin-brand-400: #2dd4bf;
+    --skin-brand-500: #14b8a6;
+    --skin-brand-600: #0d9488;
+    --skin-brand-700: #0f766e;
+    --skin-brand-800: #115e59;
+    --skin-brand-900: #134e4a;
+    --skin-brand-950: #042f2e;
+}
+
+[data-skin='maroon'] {
+    --skin-brand-25: #fef6f8;
+    --skin-brand-50: #fdf2f4;
+    --skin-brand-100: #fce7eb;
+    --skin-brand-200: #f9cfd6;
+    --skin-brand-300: #f2a3b1;
+    --skin-brand-400: #e56a80;
+    --skin-brand-500: #c81e4a;
+    --skin-brand-600: #a5163c;
+    --skin-brand-700: #871234;
+    --skin-brand-800: #70122f;
+    --skin-brand-900: #5f1129;
+    --skin-brand-950: #370717;
+}
+
 @theme {
     --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 
-    /* Brand palette (TailAdmin primary) */
-    --color-brand-25: #f8faff;
-    --color-brand-50: #ecf3ff;
-    --color-brand-100: #dde9ff;
-    --color-brand-200: #c2d6ff;
-    --color-brand-300: #9cb9ff;
-    --color-brand-400: #7592ff;
-    --color-brand-500: #465fff;
-    --color-brand-600: #3641f5;
-    --color-brand-700: #2a31d8;
-    --color-brand-800: #252dae;
-    --color-brand-900: #262e89;
-    --color-brand-950: #161950;
+    /* Brand palette mapped onto the active skin. */
+    --color-brand-25: var(--skin-brand-25);
+    --color-brand-50: var(--skin-brand-50);
+    --color-brand-100: var(--skin-brand-100);
+    --color-brand-200: var(--skin-brand-200);
+    --color-brand-300: var(--skin-brand-300);
+    --color-brand-400: var(--skin-brand-400);
+    --color-brand-500: var(--skin-brand-500);
+    --color-brand-600: var(--skin-brand-600);
+    --color-brand-700: var(--skin-brand-700);
+    --color-brand-800: var(--skin-brand-800);
+    --color-brand-900: var(--skin-brand-900);
+    --color-brand-950: var(--skin-brand-950);
 
     /* Gray scale (TailAdmin) */
     --color-gray-25: #fcfcfd;
@@ -245,18 +342,110 @@ table.ta-table thead th.dt-ordering-desc::after {
 }
 
 /* ==========================================================================
-   Desktop sidebar collapse (topbar toggle)
+   Sidebar positioning (direction aware)
+   The drawer is hidden off-canvas on small screens and pinned on desktop.
+   Using `data-open` + logical direction instead of Tailwind translate
+   utilities keeps left-to-right and right-to-left layouts symmetrical.
    ========================================================================== */
 [data-sidebar-content] {
-    transition: padding-left 0.3s ease;
+    transition:
+        padding-left 0.3s ease,
+        padding-right 0.3s ease;
+}
+
+[data-sidebar] {
+    transform: translateX(-100%);
+}
+
+[data-sidebar][data-open] {
+    transform: translateX(0);
+}
+
+[dir='rtl'] [data-sidebar] {
+    transform: translateX(100%);
+}
+
+[dir='rtl'] [data-sidebar][data-open] {
+    transform: translateX(0);
 }
 
 @media (min-width: 1024px) {
-    html[data-sidebar='collapsed'] [data-sidebar] {
+    [data-sidebar],
+    [dir='rtl'] [data-sidebar] {
+        transform: translateX(0);
+    }
+
+    /* Desktop collapse toggle */
+    html[data-sidebar-collapsed] [data-sidebar] {
         transform: translateX(-100%);
     }
 
-    html[data-sidebar='collapsed'] [data-sidebar-content] {
+    html[data-sidebar-collapsed] [data-sidebar-content] {
         padding-left: 0;
     }
+
+    html[dir='rtl'][data-sidebar-collapsed] [data-sidebar] {
+        transform: translateX(100%);
+    }
+
+    html[dir='rtl'][data-sidebar-collapsed] [data-sidebar-content] {
+        padding-right: 0;
+    }
 }
+
+/* ==========================================================================
+   Right-to-left adjustments
+   ========================================================================== */
+[dir='rtl'] [data-sidebar] {
+    left: auto;
+    right: 0;
+    border-right-width: 0;
+    border-left-width: 1px;
+}
+
+[dir='rtl'] [data-sidebar-content] {
+    padding-left: 0;
+}
+
+@media (min-width: 1024px) {
+    [dir='rtl'] [data-sidebar-content] {
+        padding-right: 290px;
+    }
+}
+
+[dir='rtl'] [data-dropdown-menu] {
+    left: 0;
+    right: auto;
+}
+
+[dir='rtl'] table.ta-table thead th {
+    text-align: right;
+}
+
+[dir='rtl'] .dt-container .dt-search input,
+[dir='rtl'] .dt-container .dt-length select {
+    text-align: right;
+}
+
+/* ==========================================================================
+   Image lightbox
+   ========================================================================== */
+.ta-lightbox {
+    @apply fixed inset-0 z-[120] hidden items-center justify-center bg-gray-950/80 p-4 backdrop-blur-sm;
+}
+
+.ta-lightbox[data-open] {
+    @apply flex;
+}
+
+[data-lightbox-trigger],
+main img:not([data-lightbox-image]) {
+    cursor: zoom-in;
+    transition: opacity 0.15s ease;
+}
+
+[data-lightbox-trigger]:hover,
+main img:not([data-lightbox-image]):hover {
+    opacity: 0.85;
+}
+
