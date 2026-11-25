@@ -390,18 +390,35 @@ function initMenuBuilder() {
     let dropTarget = null;
 
     const serializeNode = (node) => {
-        const field = (name) => node.querySelector(`[data-field="${name}"]`);
+        const field = (name) => {
+            const el = node.querySelector(`[data-field="${name}"]`);
+            return el && el.closest('[data-node]') === node ? el : null;
+        };
         const children = node.querySelector(':scope > [data-menu-children]');
         const id = node.dataset.id;
+        const iconSelect = node.querySelector('[data-icon-select]');
+
+        const title = {};
+        node.querySelectorAll('[data-field^="title."]').forEach((input) => {
+            if (input.closest('[data-node]') !== node) {
+                return;
+            }
+            title[input.dataset.field.slice('title.'.length)] = input.value.trim();
+        });
 
         return {
             id: /^\d+$/.test(id ?? '') ? Number(id) : null,
-            label: field('label')?.value ?? '',
-            icon: node.querySelector('[data-icon-select]')?.value || null,
+            title,
+            key: field('key')?.value || null,
+            type: field('type')?.value || null,
+            icon: iconSelect && iconSelect.closest('[data-node]') === node ? (iconSelect.value || null) : null,
             url: field('url')?.value || null,
+            route_name: field('route_name')?.value || null,
+            module_key: field('module_key')?.value || null,
             resource: field('resource')?.value || null,
             permission: field('permission')?.value || null,
             is_active: !!field('is_active')?.checked,
+            is_visible: !!field('is_visible')?.checked,
             target_blank: !!field('target_blank')?.checked,
             children: children
                 ? Array.from(children.querySelectorAll(':scope > [data-node]')).map(serializeNode)
@@ -483,7 +500,7 @@ function initMenuBuilder() {
         container.appendChild(node);
         bindNode(node, true);
         document.querySelectorAll('[data-empty-hint]').forEach((el) => el.remove());
-        node.querySelector('[data-field="label"]')?.focus();
+        node.querySelector('[data-field^="title."]')?.focus();
 
         return node;
     };

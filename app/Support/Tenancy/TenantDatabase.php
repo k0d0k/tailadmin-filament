@@ -26,7 +26,25 @@ class TenantDatabase
 
     public function driver(): string
     {
-        return (string) config('tenancy.connection', 'sqlite');
+        $driver = config('tenancy.driver');
+
+        if (filled($driver)) {
+            return (string) $driver;
+        }
+
+        return (string) ($this->templateConfig()['driver'] ?? config('tenancy.connection', 'sqlite'));
+    }
+
+    /**
+     * Base connection whose driver & credentials are reused for tenants.
+     *
+     * @return array<string, mixed>
+     */
+    protected function templateConfig(): array
+    {
+        $connection = (string) config('tenancy.template_connection', 'central');
+
+        return (array) config("database.connections.{$connection}", []);
     }
 
     /**
@@ -85,7 +103,7 @@ class TenantDatabase
             return file_exists($this->path($tenant));
         }
 
-        $config = config("database.connections.{$this->driver()}", []);
+        $config = $this->templateConfig();
         $pdo = $this->serverConnection($config);
         $statement = $pdo->prepare('SHOW DATABASES LIKE ?');
         $statement->execute([$this->name($tenant)]);
@@ -99,7 +117,7 @@ class TenantDatabase
     public function configure(Tenant $tenant): void
     {
         $driver = $this->driver();
-        $base = (array) config("database.connections.{$driver}", []);
+        $base = $this->templateConfig();
 
         $base['database'] = $driver === 'sqlite'
             ? $this->path($tenant)
@@ -119,9 +137,23 @@ class TenantDatabase
         Config::set('database.connections.'.self::CONNECTION, null);
     }
 
+    /**
+     * Point the tenant connection at the central database. Used when no tenant
+     * is active so tenant bound models stay queryable in a single database
+     * development setup.
+     */
+    public function fallbackToCentral(): void
+    {
+        $connection = (string) config('tenancy.template_connection', 'central');
+
+        Config::set('database.connections.'.self::CONNECTION, (array) config("database.connections.{$connection}", []));
+
+        DB::purge(self::CONNECTION);
+    }
+
     protected function createServerDatabase(string $name): void
     {
-        $config = (array) config('database.connections.'.$this->driver(), []);
+        $config = $this->templateConfig();
         $pdo = $this->serverConnection($config);
 
         $pdo->exec(sprintf('CREATE DATABASE IF NOT EXISTS `%s` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci', $name));

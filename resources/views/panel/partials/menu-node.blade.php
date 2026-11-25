@@ -1,8 +1,15 @@
 @php
     /**
      * Renders one node of the nested menu tree, recursively. Expects:
-     * $node, $iconMapJson, $icons, $permissions, $panelResources.
+     * $node, $iconMapJson, $icons, $permissions, $panelResources, $types,
+     * $modules and $locales.
      */
+    $locales = $locales ?? ['id', 'en', 'ar'];
+    $types = $types ?? [];
+    $modules = $modules ?? [];
+    $titles = (array) ($node['title'] ?? []);
+    $primaryLocale = $locales[0] ?? 'id';
+    $nodeType = $node['type'] ?? \App\Models\Menu::TYPE_LINK;
 @endphp
 
 <li data-node data-id="{{ $node['id'] }}"
@@ -27,9 +34,16 @@
             <script type="application/json" data-icon-map>{!! $iconMapJson !!}</script>
         </div>
 
-        <input type="text" data-field="label" value="{{ $node['label'] }}"
-               placeholder="{{ __('ui.menu_builder.label') }}"
+        <input type="text" data-field="title.{{ $primaryLocale }}" value="{{ $titles[$primaryLocale] ?? '' }}"
+               placeholder="{{ __('ui.menu_builder.label') }} ({{ strtoupper($primaryLocale) }})"
                class="ta-input min-w-0 flex-1 !py-1.5 !text-sm">
+
+        <select data-field="type" title="{{ __('ui.menu_builder.type') }}"
+                class="ta-select !w-28 !shrink-0 !py-1.5 !text-xs">
+            @foreach ($types as $value => $label)
+                <option value="{{ $value }}" @selected($nodeType === $value)>{{ $label }}</option>
+            @endforeach
+        </select>
 
         <label class="inline-flex shrink-0 cursor-pointer items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400"
                title="{{ __('ui.menu_builder.active') }}">
@@ -56,6 +70,36 @@
 
     <div data-node-details
          class="hidden gap-3 border-t border-gray-100 px-3 py-3 md:grid-cols-2 dark:border-gray-800">
+        @foreach (array_slice($locales, 1) as $locale)
+            <div>
+                <label class="ta-label !mb-1 !text-[11px]">{{ __('ui.menu_builder.label') }} ({{ strtoupper($locale) }})</label>
+                <input type="text" data-field="title.{{ $locale }}" value="{{ $titles[$locale] ?? '' }}"
+                       class="ta-input !py-1.5 !text-xs" @if ($locale === 'ar') dir="rtl" @endif>
+            </div>
+        @endforeach
+
+        <div>
+            <label class="ta-label !mb-1 !text-[11px]">{{ __('ui.menu_builder.key') }}</label>
+            <input type="text" data-field="key" value="{{ $node['key'] }}"
+                   placeholder="dashboard" class="ta-input !py-1.5 !text-xs">
+        </div>
+
+        <div>
+            <label class="ta-label !mb-1 !text-[11px]">{{ __('ui.menu_builder.module') }}</label>
+            <select data-field="module_key" class="ta-select !py-1.5 !text-xs">
+                <option value="">— {{ __('ui.actions.choose') }} —</option>
+                @foreach ($modules as $value => $label)
+                    <option value="{{ $value }}" @selected(($node['module_key'] ?? null) === $value)>{{ $label }}</option>
+                @endforeach
+            </select>
+        </div>
+
+        <div>
+            <label class="ta-label !mb-1 !text-[11px]">{{ __('ui.menu_builder.route_name') }}</label>
+            <input type="text" data-field="route_name" value="{{ $node['route_name'] }}"
+                   placeholder="panel.index" class="ta-input !py-1.5 !text-xs">
+        </div>
+
         <div>
             <label class="ta-label !mb-1 !text-[11px]">{{ __('ui.menu_builder.url') }}</label>
             <input type="text" data-field="url" value="{{ $node['url'] }}"
@@ -84,7 +128,12 @@
             </select>
         </div>
 
-        <div class="flex items-center">
+        <div class="flex flex-wrap items-center gap-5">
+            <label class="inline-flex cursor-pointer items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                <input type="checkbox" data-field="is_visible" @checked($node['is_visible'])
+                       class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500/40 dark:border-gray-600 dark:bg-gray-900">
+                {{ __('ui.menu_builder.visible') }}
+            </label>
             <label class="inline-flex cursor-pointer items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                 <input type="checkbox" data-field="target_blank" @checked($node['target_blank'])
                        class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500/40 dark:border-gray-600 dark:bg-gray-900">
@@ -102,6 +151,9 @@
                 'icons' => $icons,
                 'permissions' => $permissions,
                 'panelResources' => $panelResources,
+                'types' => $types,
+                'modules' => $modules,
+                'locales' => $locales,
             ])
         @endforeach
     </ul>

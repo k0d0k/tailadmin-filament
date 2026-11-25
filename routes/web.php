@@ -10,6 +10,7 @@ use App\Http\Controllers\Panel\PasswordController;
 use App\Http\Controllers\Panel\ProfileController;
 use App\Http\Controllers\Panel\ReportBuilderController;
 use App\Http\Controllers\Panel\ResourceController;
+use App\Http\Controllers\Panel\RoleController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/panel');
@@ -21,7 +22,7 @@ Route::middleware('guest')->group(function () {
     Route::post('login', [LoginController::class, 'store']);
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'tenant'])->group(function () {
     Route::post('logout', [LoginController::class, 'destroy'])->name('logout');
 
     Route::get('panel', DashboardController::class)->name('panel.dashboard');
@@ -37,6 +38,14 @@ Route::middleware('auth')->group(function () {
 
     Route::get('panel/menu-builder', [MenuBuilderController::class, 'index'])->name('panel.menu-builder');
     Route::post('panel/menu-builder', [MenuBuilderController::class, 'sync'])->name('panel.menu-builder.sync');
+
+    Route::get('panel/roles', [RoleController::class, 'index'])->name('panel.roles.index');
+    Route::post('panel/roles', [RoleController::class, 'store'])->name('panel.roles.store');
+    Route::get('panel/roles/{role}/access', [RoleController::class, 'access'])->name('panel.roles.access');
+    Route::post('panel/roles/{role}/access', [RoleController::class, 'saveAccess'])->name('panel.roles.saveAccess');
+    Route::get('panel/roles/{role}/edit', [RoleController::class, 'edit'])->name('panel.roles.edit');
+    Route::put('panel/roles/{role}', [RoleController::class, 'update'])->name('panel.roles.update');
+    Route::delete('panel/roles/{role}', [RoleController::class, 'destroy'])->name('panel.roles.destroy');
 
     Route::get('panel/report-builder', [ReportBuilderController::class, 'index'])->name('panel.report-builder');
     Route::post('panel/report-builder/run', [ReportBuilderController::class, 'run'])->name('panel.report-builder.run');

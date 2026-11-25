@@ -9,13 +9,17 @@ return [
     | Tenant database connection
     |--------------------------------------------------------------------------
     |
-    | Driver used to spawn a fresh database for every tenant. It defaults to
-    | the driver of the central connection: on SQLite each tenant gets its own
-    | file, on MySQL/MariaDB a dedicated database is created.
+    | Template connection whose driver and credentials are reused to spawn a
+    | fresh database per tenant. `template_connection` defaults to the central
+    | connection, `driver` is derived from it when left empty.
     |
     */
 
-    'connection' => env('TENANCY_DB_CONNECTION', env('DB_CONNECTION', 'sqlite')),
+    'template_connection' => env('TENANCY_TEMPLATE_CONNECTION', 'central'),
+
+    'driver' => env('TENANCY_DRIVER'),
+
+    'connection' => env('TENANCY_DB_CONNECTION', env('CENTRAL_DB_CONNECTION', env('DB_CONNECTION', 'sqlite'))),
 
     /*
     |--------------------------------------------------------------------------

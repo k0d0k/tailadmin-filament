@@ -54,6 +54,16 @@
                 </div>
 
                 <div>
+                    <label for="gen-database" class="ta-label">{{ __('ui.generator.database') }}</label>
+                    <select id="gen-database" name="database" class="ta-select">
+                        @foreach ($databases as $value => $label)
+                            <option value="{{ $value }}" @selected(old('database', 'central') === $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    <p class="ta-help">{{ __('ui.generator.database_hint') }}</p>
+                </div>
+
+                <div>
                     <label for="gen-icon" class="ta-label">{{ __('ui.generator.icon') }}</label>
                     <div class="flex items-center gap-3" data-icon-picker>
                         <span data-icon-preview

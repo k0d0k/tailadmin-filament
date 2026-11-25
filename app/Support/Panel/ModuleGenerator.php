@@ -2,6 +2,8 @@
 
 namespace App\Support\Panel;
 
+use App\Models\CrudDefinition;
+use App\Models\Menu;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Support\Acl;
@@ -13,13 +15,33 @@ use RuntimeException;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
- * Generates a native TailAdmin panel module: migration, model, policy, RBAC
- * permissions and a PanelResource definition that the ResourceRegistry
- * discovers automatically. File rendering and migration helpers are shared
- * with the Filament generator.
+ * Generates a self contained module under `Modules/<Model>` (the modular
+ * monolith layout used by the reference application) and wires it into the
+ * standalone TailAdmin panel.
+ *
+ * Output per module:
+ *   Modules/<Model>/Models/<Model>.php
+ *   Modules/<Model>/Providers/<Model>ServiceProvider.php  (loads central migrations)
+ *   Modules/<Model>/Panel/<Model>Resource.php             (PanelResource definition)
+ *   Modules/<Model>/Database/Migrations/...                (when database = central)
+ *   Modules/<Model>/Database/Migrations/Tenant/...         (when database = tenant)
+ *
+ * The module is discovered automatically by the ResourceRegistry, gets its
+ * RBAC permissions and a sidebar menu entry. File rendering and migration
+ * helpers are shared with the Filament generator.
  */
 class ModuleGenerator extends CrudGenerator
 {
+    /**
+     * Databases a module can be generated against.
+     *
+     * @var array<string, string>
+     */
+    public const DATABASES = [
+        'central' => 'Central',
+        'tenant' => 'Tenant',
+    ];
+
     /**
      * Field types offered by the panel generator, keyed by type id.
      *
@@ -49,6 +71,11 @@ class ModuleGenerator extends CrudGenerator
         $plural = Str::plural($resourceKey);
         $table = Str::snake(Str::pluralStudly($model));
         $label = filled($data['label'] ?? null) ? (string) $data['label'] : Str::headline(Str::pluralStudly($model));
+        $group = filled($data['navigation_group'] ?? null) ? (string) $data['navigation_group'] : null;
+        $description = (string) ($data['description'] ?? '');
+        $icon = IconLibrary::normalize($data['icon'] ?? null) ?? 'table-cells';
+        $connection = ($data['database'] ?? 'central') === 'tenant' ? 'tenant' : 'central';
+        $isTenant = $connection === 'tenant';
 
         $fields = $this->normalizeFields($data['fields'] ?? []);
 
@@ -64,54 +91,78 @@ class ModuleGenerator extends CrudGenerator
             throw new RuntimeException('Pilih minimal satu field untuk tampil di form.');
         }
 
-        if (File::exists(app_path("Models/{$model}.php"))) {
-            throw new RuntimeException("Model [App\\Models\\{$model}] sudah ada. Gunakan nama lain.");
+        $modulePath = $this->moduleRoot()."/{$model}";
+
+        if (File::isDirectory($modulePath)) {
+            throw new RuntimeException("Modul [{$model}] sudah ada di Modules/. Gunakan nama lain.");
         }
 
-        if (File::exists(app_path("Panel/Resources/{$model}Resource.php"))) {
-            throw new RuntimeException("Modul [{$model}] sudah ada di panel.");
+        if (File::exists(app_path("Models/{$model}.php"))) {
+            throw new RuntimeException("Model [App\\Models\\{$model}] sudah ada. Gunakan nama lain.");
         }
 
         $created = [];
         $sort = $this->tableFields($fields)[0]['name'];
 
-        // 1. Migration
+        // 1. Migration — central lives in the module, tenant in its Tenant folder.
         $migrationName = date('Y_m_d_His')."_create_{$table}_table";
-        $migrationPath = database_path("migrations/{$migrationName}.php");
+        $migrationPath = $isTenant
+            ? "{$modulePath}/Database/Migrations/Tenant/{$migrationName}.php"
+            : "{$modulePath}/Database/Migrations/{$migrationName}.php";
+
         $this->put($migrationPath, $this->render('migration', [
             'TABLE' => $table,
+            'TENANT_COLUMN' => $isTenant
+                ? "            \$table->unsignedBigInteger('tenant_id')->nullable()->index();\n"
+                : '',
             'COLUMNS' => $this->migrationColumns($fields),
         ]));
         $created[] = $migrationPath;
 
         // 2. Model
-        $modelPath = app_path("Models/{$model}.php");
+        $fillable = $this->fillable($fields);
+
+        if ($isTenant) {
+            $fillable = "        'tenant_id',".($fillable !== '' ? "\n".$fillable : '');
+        }
+
+        $modelPath = "{$modulePath}/Models/{$model}.php";
         $this->put($modelPath, $this->render('model', [
             'MODEL' => $model,
-            'SLUG_SOURCE' => $this->slugSource($fields),
-            'FILLABLE' => $this->fillable($fields),
+            'CONNECTION' => $connection,
+            'TABLE' => $table,
+            'FILLABLE' => $fillable,
             'CASTS' => $this->casts($fields),
+            'SLUG_SOURCE' => $this->slugSource($fields),
+            'TENANT_IMPORT' => $isTenant ? "\nuse App\\Models\\Concerns\\HasTenant;" : '',
+            'TENANT_TRAIT' => $isTenant ? "\n    use HasTenant;" : '',
         ]));
         $created[] = $modelPath;
 
-        // 3. Policy (auto discovered by Laravel from App\Models\X -> App\Policies\XPolicy)
-        $policyPath = app_path("Policies/{$model}Policy.php");
-        $this->put($policyPath, $this->render('policy', [
+        // 3. ServiceProvider (self contained module, modular native style)
+        $providerPath = "{$modulePath}/Providers/{$model}ServiceProvider.php";
+        $this->put($providerPath, $this->render('provider', [
             'MODEL' => $model,
-            'RESOURCE_KEY' => $resourceKey,
+            'NOTE' => $isTenant
+                ? 'Migrasi modul ini berada di Database/Migrations/Tenant dan dijalankan saat provisi tenant.'
+                : 'Migrasi pusat modul ini dimuat otomatis oleh provider.',
+            'BOOT' => $isTenant
+                ? "        //\n"
+                : "        \$this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');\n",
         ]));
-        $created[] = $policyPath;
+        $created[] = $providerPath;
 
-        // 4. Panel definition
-        $panelPath = app_path("Panel/Resources/{$model}Resource.php");
+        // 4. Panel resource definition (discovered by the ResourceRegistry)
+        $panelPath = "{$modulePath}/Panel/{$model}Resource.php";
         $this->put($panelPath, $this->render('panel', [
             'MODEL' => $model,
             'RESOURCE_KEY' => $resourceKey,
+            'DATABASE' => $connection,
             'TITLE' => addslashes($label),
             'SINGULAR' => addslashes(Str::headline($model)),
-            'GROUP' => addslashes(filled($data['navigation_group'] ?? null) ? (string) $data['navigation_group'] : 'Modul'),
-            'ICON' => addslashes(IconLibrary::normalize($data['icon'] ?? null) ?? 'table-cells'),
-            'DESCRIPTION' => addslashes((string) ($data['description'] ?? '')),
+            'GROUP' => addslashes($group ?? 'Modul'),
+            'ICON' => addslashes($icon),
+            'DESCRIPTION' => addslashes($description),
             'COLUMNS' => $this->panelColumns($fields),
             'SEARCH' => $this->searchList($fields),
             'FILTERS' => $this->panelFilters($fields),
@@ -134,17 +185,93 @@ class ModuleGenerator extends CrudGenerator
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        // 6. Run the migration
-        Artisan::call('migrate', ['--force' => true]);
+        // 6. Sidebar menu entry
+        $menu = $this->createMenu($label, $plural, $icon, $resourceKey, $group);
+
+        // 7. Definition record
+        CrudDefinition::updateOrCreate(
+            ['resource_key' => $resourceKey],
+            [
+                'module' => $model,
+                'model' => $model,
+                'table_name' => $table,
+                'database' => $connection,
+                'label' => $label,
+                'icon' => $icon,
+                'group' => $group,
+                'description' => $description !== '' ? $description : null,
+                'fields' => $fields,
+                'created_by' => auth()->id(),
+            ],
+        );
+
+        // 8. Run the migration — only for central modules. Tenant migrations
+        //    are applied when a tenant database is provisioned.
+        if (! $isTenant) {
+            Artisan::call('migrate', [
+                '--path' => 'Modules/'.$model.'/Database/Migrations',
+                '--force' => true,
+            ]);
+        }
 
         return [
-            'model' => "App\\Models\\{$model}",
+            'module' => $modulePath,
+            'model' => "Modules\\{$model}\\Models\\{$model}",
+            'database' => $connection,
             'key' => $plural,
             'title' => $label,
+            'menu' => $menu,
             'permissions' => $permissions,
             'files' => $created,
             'url' => route('panel.index', $plural),
         ];
+    }
+
+    /**
+     * Absolute path of the modules root directory.
+     */
+    protected function moduleRoot(): string
+    {
+        return rtrim((string) config('modules.path', base_path('Modules')), '/\\');
+    }
+
+    /**
+     * Create the sidebar menu entry (and its optional group) for a module.
+     */
+    protected function createMenu(string $label, string $plural, string $icon, string $resourceKey, ?string $group): Menu
+    {
+        $parent = null;
+
+        if ($group !== null) {
+            $parent = Menu::firstOrCreate(
+                ['key' => Str::slug($group, '_')],
+                [
+                    'type' => Menu::TYPE_GROUP,
+                    'title' => ['id' => $group, 'en' => $group, 'ar' => $group],
+                    'label' => $group,
+                    'icon' => 'bars-3',
+                    'is_active' => true,
+                    'is_visible' => true,
+                    'sort' => (int) Menu::whereNull('parent_id')->max('sort') + 1,
+                ],
+            );
+        }
+
+        return Menu::updateOrCreate(
+            ['key' => $plural],
+            [
+                'parent_id' => $parent?->id,
+                'type' => Menu::TYPE_LINK,
+                'title' => ['id' => $label, 'en' => $label, 'ar' => $label],
+                'label' => $label,
+                'icon' => $icon,
+                'resource' => $plural,
+                'permission' => Acl::name('view_any', $resourceKey),
+                'is_active' => true,
+                'is_visible' => true,
+                'sort' => (int) Menu::where('parent_id', $parent?->id)->max('sort') + 1,
+            ],
+        );
     }
 
     /**
@@ -153,7 +280,7 @@ class ModuleGenerator extends CrudGenerator
      */
     protected function normalizeFields(array $fields): array
     {
-        $reserved = ['id', 'slug', 'created_at', 'updated_at', 'deleted_at'];
+        $reserved = ['id', 'slug', 'tenant_id', 'created_at', 'updated_at', 'deleted_at'];
 
         return collect($fields)
             ->map(function (array $field): array {
@@ -382,5 +509,21 @@ class ModuleGenerator extends CrudGenerator
     protected function quote(string $value): string
     {
         return "'".addslashes($value)."'";
+    }
+
+    /**
+     * Render a module stub from `stubs/module`.
+     *
+     * @param  array<string, string>  $replacements
+     */
+    protected function render(string $stub, array $replacements): string
+    {
+        $contents = File::get(base_path("stubs/module/{$stub}.stub"));
+
+        foreach ($replacements as $key => $value) {
+            $contents = str_replace("%{$key}%", $value, $contents);
+        }
+
+        return $contents;
     }
 }

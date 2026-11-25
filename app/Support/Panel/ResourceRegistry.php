@@ -42,8 +42,9 @@ class ResourceRegistry
     }
 
     /**
-     * Modules created by the panel CRUD generator, discovered from
-     * App\Panel\Resources. The disk is scanned once per request.
+     * Modules created by the panel CRUD generator. Scans the legacy
+     * App\Panel\Resources directory and the generated `Modules/<Model>/Panel`
+     * directories. The disk is scanned once per request.
      *
      * @return array<string, array<string, mixed>>
      */
@@ -57,9 +58,7 @@ class ResourceRegistry
 
         $resources = [];
 
-        foreach (File::glob(app_path('Panel/Resources/*.php')) ?: [] as $path) {
-            $class = 'App\\Panel\\Resources\\'.pathinfo($path, PATHINFO_FILENAME);
-
+        foreach (self::generatedClasses() as $class) {
             if (! class_exists($class) || ! is_subclass_of($class, PanelResource::class)) {
                 continue;
             }
@@ -72,6 +71,29 @@ class ResourceRegistry
         }
 
         return $resources;
+    }
+
+    /**
+     * Candidate PanelResource classes from both discovery locations.
+     *
+     * @return array<int, class-string>
+     */
+    protected static function generatedClasses(): array
+    {
+        $classes = [];
+
+        foreach (File::glob(app_path('Panel/Resources/*.php')) ?: [] as $path) {
+            $classes[] = 'App\\Panel\\Resources\\'.pathinfo($path, PATHINFO_FILENAME);
+        }
+
+        $root = (string) config('modules.path', base_path('Modules'));
+
+        foreach (File::glob("{$root}/*/Panel/*.php") ?: [] as $path) {
+            $module = basename(dirname(dirname($path)));
+            $classes[] = "Modules\\{$module}\\Panel\\".pathinfo($path, PATHINFO_FILENAME);
+        }
+
+        return $classes;
     }
 
     /**
@@ -320,27 +342,33 @@ class ResourceRegistry
             'description' => 'Navigasi yang tampil pada panel.',
             'query' => fn (): Builder => Menu::query()->with('parent'),
             'columns' => [
-                ['data' => 'label', 'title' => 'Label', 'orderable' => true, 'value' => fn ($r) => '<span class="font-medium text-gray-800 dark:text-gray-100">'.e($r->label).'</span>'],
-                self::slugColumn(),
-                ['data' => 'parent.label', 'title' => 'Induk', 'orderable' => false, 'value' => fn ($r) => Html::text($r->parent?->label)],
+                ['data' => 'label', 'title' => 'Label', 'orderable' => true, 'value' => fn ($r) => '<span class="font-medium text-gray-800 dark:text-gray-100">'.e($r->label()).'</span>'],
+                ['data' => 'key', 'title' => 'Key', 'orderable' => true, 'value' => fn ($r) => '<span class="font-mono text-xs text-gray-500 dark:text-gray-400">'.e($r->key).'</span>'],
+                ['data' => 'type', 'title' => 'Tipe', 'orderable' => true, 'value' => fn ($r) => Html::badge($r->type ?: 'link', 'muted')],
+                ['data' => 'parent.label', 'title' => 'Induk', 'orderable' => false, 'value' => fn ($r) => Html::text($r->parent?->label())],
                 ['data' => 'permission', 'title' => 'Permission', 'orderable' => false, 'value' => fn ($r) => $r->permission ? Html::badge($r->permission, 'muted') : '<span class="text-gray-400">—</span>'],
                 ['data' => 'sort', 'title' => 'Urut', 'orderable' => true, 'className' => 'text-center', 'value' => fn ($r) => '<span class="text-gray-500 dark:text-gray-400">'.(int) $r->sort.'</span>'],
                 ['data' => 'is_active', 'title' => 'Status', 'orderable' => false, 'value' => fn ($r) => Html::status($r->is_active)],
             ],
-            'search' => ['label', 'slug', 'url', 'permission'],
+            'search' => ['label', 'key', 'url', 'route_name', 'permission'],
             'filters' => [
+                self::selectFilter('type', 'Tipe', ['group' => 'Group', 'link' => 'Link', 'header' => 'Header']),
                 self::selectFilter('is_active', 'Status', ['1' => 'Aktif', '0' => 'Nonaktif']),
             ],
             'fields' => [
                 self::text('label', 'Label', ['required', 'string', 'max:255'], 'half'),
+                self::text('key', 'Kunci', ['nullable', 'string', 'max:255'], 'half'),
                 self::slugField('menus'),
+                self::select('type', 'Tipe', fn (): array => ['group' => 'Group', 'link' => 'Link', 'header' => 'Header'], ['required', 'string'], 'half'),
                 self::select('parent_id', 'Menu Induk', fn ($resource) => self::menuParentOptions($resource), ['nullable', 'exists:menus,id'], 'half'),
                 self::icon('icon', 'Ikon', ['nullable', 'string'], 'half'),
                 self::number('sort', 'Urutan', ['nullable', 'integer', 'min:0'], 'half'),
                 self::text('url', 'URL Manual', ['nullable', 'string', 'max:255'], 'half'),
-                self::text('resource', 'Filament Resource', ['nullable', 'string', 'max:255'], 'half', [], 'Kelas resource Filament (opsional).'),
+                self::text('route_name', 'Nama Route', ['nullable', 'string', 'max:255'], 'half'),
+                self::text('resource', 'Sumber Panel', ['nullable', 'string', 'max:255'], 'half', [], 'Kunci resource panel (mis. principals).'),
                 self::select('permission', 'Permission', fn () => self::permissionOptions(), ['nullable', 'string'], 'half'),
                 self::toggle('is_active', 'Aktif', 'half'),
+                self::toggle('is_visible', 'Tampil', 'half'),
                 self::toggle('target_blank', 'Buka di tab baru', 'half'),
             ],
             'default_sort' => ['sort', 'asc'],

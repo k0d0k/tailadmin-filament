@@ -31,10 +31,12 @@ class PanelMenu
             $roots = Menu::query()
                 ->whereNull('parent_id')
                 ->where('is_active', true)
+                ->where('is_visible', true)
                 ->orderBy('sort')
                 ->orderBy('label')
                 ->with(['children' => fn ($query) => $query
                     ->where('is_active', true)
+                    ->where('is_visible', true)
                     ->orderBy('sort')
                     ->orderBy('label')])
                 ->get();
@@ -56,7 +58,7 @@ class PanelMenu
             }
 
             if ($items !== []) {
-                $sections[$root->label] = $items;
+                $sections[$root->label()] = $items;
 
                 continue;
             }
@@ -90,7 +92,7 @@ class PanelMenu
         }
 
         return [
-            'title' => (string) $menu->label,
+            'title' => $menu->label(),
             'icon' => $menu->icon ?: 'bars-3',
             'url' => $url,
             'active' => self::isActive($url),

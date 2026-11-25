@@ -16,20 +16,72 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'sqlite'),
+    'default' => env('DB_CONNECTION', 'central'),
 
     /*
     |--------------------------------------------------------------------------
     | Database Connections
     |--------------------------------------------------------------------------
     |
-    | Below are all of the database connections defined for your application.
-    | An example configuration is provided for each database system which
-    | is supported by Laravel. You're free to add / remove connections.
+    | The application is a multi-tenant SaaS: `central` holds the shared tables
+    | (users, roles, tenants, menus, ...) while `tenant` is pointed at the
+    | per-tenant database at runtime by App\Support\Tenancy\TenantDatabase.
+    | The `sqlite`, `mysql`, ... connections are kept as driver templates.
     |
     */
 
     'connections' => [
+
+        'central' => [
+            'driver' => env('CENTRAL_DB_CONNECTION', 'sqlite'),
+            'url' => env('CENTRAL_DB_URL'),
+            'host' => env('CENTRAL_DB_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('CENTRAL_DB_PORT', env('DB_PORT', '3306')),
+            'database' => env('CENTRAL_DB_DATABASE', database_path('database.sqlite')),
+            'username' => env('CENTRAL_DB_USERNAME', env('DB_USERNAME', 'root')),
+            'password' => env('CENTRAL_DB_PASSWORD', env('DB_PASSWORD', '')),
+            'unix_socket' => env('CENTRAL_DB_SOCKET', ''),
+            'charset' => env('CENTRAL_DB_CHARSET', 'utf8mb4'),
+            'collation' => env('CENTRAL_DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
+            'busy_timeout' => null,
+            'journal_mode' => null,
+            'synchronous' => null,
+            'transaction_mode' => 'DEFERRED',
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+
+        'tenant' => [
+            // Repointed at the active tenant database at runtime.
+            'driver' => env('TENANT_DB_CONNECTION', env('CENTRAL_DB_CONNECTION', 'sqlite')),
+            'url' => env('TENANT_DB_URL'),
+            'host' => env('TENANT_DB_HOST', env('CENTRAL_DB_HOST', env('DB_HOST', '127.0.0.1'))),
+            'port' => env('TENANT_DB_PORT', env('CENTRAL_DB_PORT', env('DB_PORT', '3306'))),
+            'database' => env('TENANT_DB_DATABASE'),
+            'username' => env('TENANT_DB_USERNAME', env('CENTRAL_DB_USERNAME', env('DB_USERNAME', 'root'))),
+            'password' => env('TENANT_DB_PASSWORD', env('CENTRAL_DB_PASSWORD', env('DB_PASSWORD', ''))),
+            'unix_socket' => env('TENANT_DB_SOCKET', ''),
+            'charset' => env('TENANT_DB_CHARSET', 'utf8mb4'),
+            'collation' => env('TENANT_DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
+            'busy_timeout' => null,
+            'journal_mode' => null,
+            'synchronous' => null,
+            'transaction_mode' => 'DEFERRED',
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
 
         'sqlite' => [
             'driver' => 'sqlite',

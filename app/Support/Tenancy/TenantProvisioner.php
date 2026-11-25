@@ -6,6 +6,7 @@ use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use RuntimeException;
 
@@ -44,19 +45,27 @@ class TenantProvisioner
     }
 
     /**
-     * Run the tenant schema migrations on the tenant connection.
+     * Run the tenant schema migrations on the tenant connection. Includes the
+     * core tenant migrations plus every `Modules/<Model>/Database/Migrations/Tenant`
+     * directory so generated tenant modules are provisioned too.
      */
     protected function migrate(): void
     {
-        $path = config('tenancy.migrations');
+        $paths = array_filter([(string) config('tenancy.migrations')]);
 
-        if (blank($path)) {
+        $root = (string) config('modules.path', base_path('Modules'));
+
+        foreach (File::glob("{$root}/*/Database/Migrations/Tenant") ?: [] as $directory) {
+            $paths[] = str_replace(base_path().'/', '', $directory);
+        }
+
+        if ($paths === []) {
             throw new RuntimeException('Path migrasi tenant belum dikonfigurasi.');
         }
 
         Artisan::call('migrate', [
             '--database' => TenantDatabase::CONNECTION,
-            '--path' => $path,
+            '--path' => array_values($paths),
             '--force' => true,
         ]);
     }

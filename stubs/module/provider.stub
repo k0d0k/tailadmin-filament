@@ -1,0 +1,23 @@
+<?php
+
+namespace Modules\%MODEL%\Providers;
+
+use Illuminate\Support\ServiceProvider;
+
+/**
+ * ServiceProvider modul %MODEL% (Modular Native).
+ *
+ * Modul hasil CRUD Generator ini mendaftarkan migrasi pusatnya sendiri.
+ * %NOTE%
+ */
+class %MODEL%ServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        //
+    }
+
+    public function boot(): void
+    {
+%BOOT%    }
+}

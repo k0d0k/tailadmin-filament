@@ -23,6 +23,7 @@ class GeneratorController extends Controller
 
         return view('panel.generator', [
             'fieldTypes' => ModuleGenerator::FIELD_TYPES,
+            'databases' => ModuleGenerator::DATABASES,
             'icons' => array_combine(IconLibrary::keys(), IconLibrary::keys()),
             'iconMap' => IconLibrary::map(),
         ]);
@@ -35,6 +36,7 @@ class GeneratorController extends Controller
         $data = $request->validate([
             'model' => ['required', 'string', 'max:100', 'regex:/^[A-Za-z][A-Za-z0-9]*$/'],
             'label' => ['nullable', 'string', 'max:255'],
+            'database' => ['nullable', 'string', 'in:central,tenant'],
             'navigation_group' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:255'],
             'icon' => ['nullable', 'string', 'max:100'],

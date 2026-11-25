@@ -10,6 +10,9 @@
     'icons' => $icons,
     'permissions' => $permissions,
     'panelResources' => $panelResources,
+    'types' => $types,
+    'modules' => $modules,
+    'locales' => $locales,
 ])
 
 @section('content')
@@ -59,12 +62,18 @@
     <template id="menu-node-template">
         @include('panel.partials.menu-node', $partialData + ['node' => [
             'id' => '__ID__',
+            'title' => [],
+            'key' => null,
+            'type' => \App\Models\Menu::TYPE_LINK,
             'label' => '',
             'icon' => null,
             'url' => null,
+            'route_name' => null,
             'resource' => null,
+            'module_key' => null,
             'permission' => null,
             'is_active' => true,
+            'is_visible' => true,
             'target_blank' => false,
             'children' => [],
         ]])

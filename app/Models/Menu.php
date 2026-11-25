@@ -9,11 +9,17 @@ use Filament\Resources\Resource;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Route;
 
 class Menu extends Model
 {
     use Auditable, HasSlug;
+
+    public const TYPE_GROUP = 'group';
+    public const TYPE_LINK = 'link';
+    public const TYPE_HEADER = 'header';
 
     /**
      * Attribute the slug is derived from.
@@ -26,13 +32,19 @@ class Menu extends Model
     protected $fillable = [
         'slug',
         'parent_id',
+        'title',
+        'key',
+        'type',
         'label',
         'icon',
         'url',
+        'route_name',
         'resource',
+        'module_key',
         'permission',
         'sort',
         'is_active',
+        'is_visible',
         'target_blank',
     ];
 
@@ -42,7 +54,9 @@ class Menu extends Model
     protected function casts(): array
     {
         return [
+            'title' => 'array',
             'is_active' => 'boolean',
+            'is_visible' => 'boolean',
             'target_blank' => 'boolean',
             'sort' => 'integer',
         ];
@@ -64,6 +78,49 @@ class Menu extends Model
     }
 
     /**
+     * Roles granted access to this menu, with the per-action abilities.
+     */
+    public function roles(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class, 'role_menu')
+            ->withPivot(['can_view', 'can_create', 'can_update', 'can_delete', 'can_export'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Localised title with a sensible fallback chain (locale → id → en → key).
+     */
+    public function label(?string $locale = null): string
+    {
+        $locale ??= app()->getLocale();
+        $title = (array) ($this->getAttribute('title') ?? []);
+
+        foreach ([$locale, 'id', 'en', $this->key, $this->getAttribute('label')] as $candidate) {
+            if (filled($candidate) && filled($title[$candidate] ?? null)) {
+                return (string) $title[$candidate];
+            }
+        }
+
+        return (string) ($title['id'] ?? $title['en'] ?? $this->getAttribute('label') ?? $this->key ?? '');
+    }
+
+    /**
+     * Whether this node groups other menus.
+     */
+    public function isGroup(): bool
+    {
+        return $this->type === self::TYPE_GROUP;
+    }
+
+    /**
+     * Whether this node is a section header without a destination.
+     */
+    public function isHeader(): bool
+    {
+        return $this->type === self::TYPE_HEADER;
+    }
+
+    /**
      * Resolve the target URL for this menu, either from the linked Filament
      * resource/page or from the manual URL.
      */
@@ -81,15 +138,11 @@ class Menu extends Model
             }
         }
 
-        if (blank($this->url)) {
-            return null;
+        if (filled($this->route_name) && Route::has($this->route_name)) {
+            return route($this->route_name);
         }
 
-        if (str_starts_with($this->url, 'http://') || str_starts_with($this->url, 'https://')) {
-            return $this->url;
-        }
-
-        return url($this->url);
+        return $this->url();
     }
 
     /**
@@ -99,12 +152,12 @@ class Menu extends Model
      */
     public function panelUrl(): ?string
     {
-        if (filled($this->url)) {
-            if (str_starts_with($this->url, 'http://') || str_starts_with($this->url, 'https://')) {
-                return $this->url;
-            }
+        if ($url = $this->url()) {
+            return $url;
+        }
 
-            return url($this->url);
+        if (filled($this->route_name) && Route::has($this->route_name)) {
+            return route($this->route_name);
         }
 
         if (filled($this->resource) && ResourceRegistry::has($this->resource)) {
@@ -112,5 +165,23 @@ class Menu extends Model
         }
 
         return null;
+    }
+
+    /**
+     * Normalise the manual URL column into an absolute URL.
+     */
+    protected function url(): ?string
+    {
+        if (blank($this->getAttribute('url'))) {
+            return null;
+        }
+
+        $url = (string) $this->getAttribute('url');
+
+        if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
+            return $url;
+        }
+
+        return url($url);
     }
 }
