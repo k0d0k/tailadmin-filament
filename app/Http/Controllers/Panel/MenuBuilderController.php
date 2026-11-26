@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Menu;
 use App\Models\Permission;
 use App\Support\Acl;
-use App\Support\Panel\IconLibrary;
 use App\Support\Panel\ResourceRegistry;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -44,8 +43,6 @@ class MenuBuilderController extends Controller
 
         return view('panel.menu-builder', [
             'tree' => $this->buildTree($menus),
-            'iconMap' => IconLibrary::map(),
-            'icons' => array_combine(IconLibrary::keys(), IconLibrary::keys()),
             'permissions' => Permission::query()->orderBy('name')->pluck('name', 'name')->all(),
             'panelResources' => collect(ResourceRegistry::all())
                 ->map(fn (array $definition, string $key): array => [

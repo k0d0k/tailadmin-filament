@@ -3,11 +3,7 @@
 @section('title', __('ui.menu_builder.title'))
 @section('subtitle', __('ui.menu_builder.subtitle'))
 
-@php($iconMapJson = json_encode($iconMap))
-
 @php($partialData = [
-    'iconMapJson' => $iconMapJson,
-    'icons' => $icons,
     'permissions' => $permissions,
     'panelResources' => $panelResources,
     'types' => $types,

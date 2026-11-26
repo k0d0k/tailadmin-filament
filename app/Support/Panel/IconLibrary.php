@@ -81,23 +81,6 @@ class IconLibrary
     }
 
     /**
-     * All icons keyed by their plain name, so the icon picker can swap the
-     * preview client side without a round trip.
-     *
-     * @return array<string, string>
-     */
-    public static function map(string $class = 'h-6 w-6'): array
-    {
-        $map = [];
-
-        foreach (array_keys(self::PATHS) as $key) {
-            $map[$key] = self::render($key, $class);
-        }
-
-        return $map;
-    }
-
-    /**
      * Reduce any stored value (`heroicon-o-users`, `users`) to the plain key
      * used by the picker. Returns null when there is nothing to show.
      */

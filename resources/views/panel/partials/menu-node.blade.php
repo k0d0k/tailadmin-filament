@@ -1,8 +1,7 @@
 @php
     /**
      * Renders one node of the nested menu tree, recursively. Expects:
-     * $node, $iconMapJson, $icons, $permissions, $panelResources, $types,
-     * $modules and $locales.
+     * $node, $permissions, $panelResources, $types, $modules and $locales.
      */
     $locales = $locales ?? ['id', 'en', 'ar'];
     $types = $types ?? [];
@@ -20,18 +19,12 @@
             <x-panel-icon name="bars-3" class="h-4 w-4" />
         </span>
 
-        <div data-icon-picker class="flex shrink-0 items-center gap-2">
-            <span data-icon-preview
-                  class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-700 dark:bg-white/5 dark:text-gray-200">
-                {!! \App\Support\Panel\IconLibrary::render($node['icon'] ?: 'bars-3', 'h-5 w-5') !!}
-            </span>
-            <select data-icon-select class="ta-select !w-32 !py-1.5 !text-xs" title="{{ __('ui.menu_builder.icon') }}">
-                <option value="">— {{ __('ui.menu_builder.select_icon') }} —</option>
-                @foreach ($icons as $value => $label)
-                    <option value="{{ $value }}" @selected(\App\Support\Panel\IconLibrary::normalize($node['icon']) === $value)>{{ $label }}</option>
-                @endforeach
-            </select>
-            <script type="application/json" data-icon-map>{!! $iconMapJson !!}</script>
+        <div class="shrink-0">
+            @include('panel.partials.icon-picker', [
+                'name' => null,
+                'value' => \App\Support\Panel\IconLibrary::normalize($node['icon']),
+                'previewClass' => 'h-9 w-9',
+            ])
         </div>
 
         <input type="text" data-field="title.{{ $primaryLocale }}" value="{{ $titles[$primaryLocale] ?? '' }}"
@@ -147,8 +140,6 @@
         @foreach ($node['children'] as $child)
             @include('panel.partials.menu-node', [
                 'node' => $child,
-                'iconMapJson' => $iconMapJson,
-                'icons' => $icons,
                 'permissions' => $permissions,
                 'panelResources' => $panelResources,
                 'types' => $types,

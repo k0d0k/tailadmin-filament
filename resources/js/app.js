@@ -346,31 +346,66 @@ function initRowActions() {
 }
 
 /* --------------------------------------------------------------------------
- * Icon picker preview
+ * Icon picker (popover grid of inline SVGs)
  * ------------------------------------------------------------------------ */
-function initIconPickers() {
-    document.querySelectorAll('[data-icon-picker]').forEach((picker) => {
-        const select = picker.querySelector('[data-icon-select]');
+function initIconPickers(root = document) {
+    root.querySelectorAll('[data-icon-picker]').forEach((picker) => {
+        if (picker.dataset.iconReady === '1') {
+            return;
+        }
+        picker.dataset.iconReady = '1';
+
+        const input = picker.querySelector('[data-icon-input]');
         const preview = picker.querySelector('[data-icon-preview]');
-        if (!select || !preview) {
+        const label = picker.querySelector('[data-icon-label]');
+        const toggle = picker.querySelector('[data-icon-toggle]');
+        const panel = picker.querySelector('[data-icon-panel]');
+        const options = picker.querySelectorAll('[data-icon-option]');
+
+        if (!options.length) {
             return;
         }
 
-        let icons = {};
-        try {
-            icons = JSON.parse(picker.querySelector('[data-icon-map]')?.textContent ?? '{}');
-        } catch (error) {
-            icons = {};
-        }
+        const closePanel = () => panel?.classList.add('hidden');
 
-        const render = () => {
-            const svg = icons[select.value];
-            preview.innerHTML = svg ?? icons['bars-3'] ?? '';
-            preview.classList.toggle('opacity-40', !svg);
-        };
+        toggle?.addEventListener('click', (event) => {
+            event.stopPropagation();
+            panel?.classList.toggle('hidden');
+        });
 
-        select.addEventListener('change', render);
-        render();
+        options.forEach((option) => {
+            option.addEventListener('click', () => {
+                const value = option.dataset.iconOption;
+
+                if (input) {
+                    input.value = value;
+                }
+                if (preview) {
+                    preview.innerHTML = option.querySelector('svg')?.outerHTML ?? '';
+                }
+                if (label) {
+                    label.textContent = value;
+                }
+
+                options.forEach((other) => {
+                    const active = other === option;
+                    other.classList.toggle('border-brand-500', active);
+                    other.classList.toggle('bg-brand-50', active);
+                    other.classList.toggle('text-brand-600', active);
+                    other.classList.toggle('dark:bg-brand-500/15', active);
+                    other.classList.toggle('dark:text-brand-400', active);
+                    other.classList.toggle('border-transparent', !active);
+                });
+
+                closePanel();
+            });
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!picker.contains(event.target)) {
+                closePanel();
+            }
+        });
     });
 }
 
@@ -396,7 +431,7 @@ function initMenuBuilder() {
         };
         const children = node.querySelector(':scope > [data-menu-children]');
         const id = node.dataset.id;
-        const iconSelect = node.querySelector('[data-icon-select]');
+        const iconInput = node.querySelector('[data-icon-input]');
 
         const title = {};
         node.querySelectorAll('[data-field^="title."]').forEach((input) => {
@@ -411,7 +446,7 @@ function initMenuBuilder() {
             title,
             key: field('key')?.value || null,
             type: field('type')?.value || null,
-            icon: iconSelect && iconSelect.closest('[data-node]') === node ? (iconSelect.value || null) : null,
+            icon: iconInput && iconInput.closest('[data-node]') === node ? (iconInput.value || null) : null,
             url: field('url')?.value || null,
             route_name: field('route_name')?.value || null,
             module_key: field('module_key')?.value || null,
@@ -433,31 +468,7 @@ function initMenuBuilder() {
             .forEach((el) => el.classList.remove('ta-drop-before', 'ta-drop-after', 'ta-drop-inside'));
     };
 
-    const initIconPicker = (root) => {
-        root.querySelectorAll('[data-icon-picker]').forEach((picker) => {
-            const select = picker.querySelector('[data-icon-select]');
-            const preview = picker.querySelector('[data-icon-preview]');
-            if (!select || !preview) {
-                return;
-            }
-
-            let icons = {};
-            try {
-                icons = JSON.parse(picker.querySelector('[data-icon-map]')?.textContent ?? '{}');
-            } catch (error) {
-                icons = {};
-            }
-
-            const render = () => {
-                const svg = icons[select.value];
-                preview.innerHTML = svg ?? icons['bars-3'] ?? '';
-                preview.classList.toggle('opacity-40', !svg);
-            };
-
-            select.addEventListener('change', render);
-            render();
-        });
-    };
+    const initIconPicker = (root) => initIconPickers(root);
 
     const bindNode = (node, isNew) => {
         node.querySelector('[data-toggle-details]')?.addEventListener('click', () => {

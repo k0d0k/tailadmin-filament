@@ -467,10 +467,7 @@ class ResourceRegistry
      */
     protected static function icon(string $name, string $label, array $rules = [], string $col = 'half', ?string $help = null): array
     {
-        return compact('name', 'label', 'rules', 'col', 'help') + [
-            'type' => 'icon',
-            'options' => fn (): array => array_combine(IconLibrary::keys(), IconLibrary::keys()),
-        ];
+        return compact('name', 'label', 'rules', 'col', 'help') + ['type' => 'icon'];
     }
 
     /**

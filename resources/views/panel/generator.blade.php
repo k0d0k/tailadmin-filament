@@ -64,20 +64,8 @@
                 </div>
 
                 <div>
-                    <label for="gen-icon" class="ta-label">{{ __('ui.generator.icon') }}</label>
-                    <div class="flex items-center gap-3" data-icon-picker>
-                        <span data-icon-preview
-                              class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-700 dark:bg-white/5 dark:text-gray-200">
-                            {!! \App\Support\Panel\IconLibrary::render(old('icon') ?: 'table-cells', 'h-6 w-6') !!}
-                        </span>
-                        <select id="gen-icon" name="icon" data-icon-select class="ta-select">
-                            <option value="">{{ __('ui.actions.choose') }}</option>
-                            @foreach ($icons as $value => $label)
-                                <option value="{{ $value }}" @selected(old('icon') === $value)>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <script type="application/json" data-icon-map>@json($iconMap)</script>
+                    <label class="ta-label">{{ __('ui.generator.icon') }}</label>
+                    @include('panel.partials.icon-picker', ['name' => 'icon', 'value' => old('icon')])
                 </div>
             </div>
         </div>

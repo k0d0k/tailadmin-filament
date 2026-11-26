@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Support\Acl;
-use App\Support\Panel\IconLibrary;
 use App\Support\Panel\ModuleGenerator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -24,8 +23,6 @@ class GeneratorController extends Controller
         return view('panel.generator', [
             'fieldTypes' => ModuleGenerator::FIELD_TYPES,
             'databases' => ModuleGenerator::DATABASES,
-            'icons' => array_combine(IconLibrary::keys(), IconLibrary::keys()),
-            'iconMap' => IconLibrary::map(),
         ]);
     }
 
